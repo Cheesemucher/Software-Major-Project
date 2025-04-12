@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>Build</title>
+
+  <!-- Link external CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='build.css') }}">
+</head>
+
+
+<body>
+  <!-- Top Navigation -->
+  <div class="top-bar">
+    <a href="{{ url_for('login') }}"><button class="top-button">Logout</button></a>
+    <a href="{{ url_for('saves') }}"><button class="top-button">Saves</button></a>
+    <a href="{{ url_for('build') }}"><button class="top-button">Build</button></a>
+    <a href="{{ url_for('recs') }}"><button class="top-button">Recs</button></a>
+    <a href="{{ url_for('blackjack') }}"><button class="top-button">Blackjack</button></a>
+  </div>
+
+  <div class="main">
+    <!-- Left Sidebar -->
+    <div class="left-panel">
+      <div class="toggle-button">Toggle</div>
+      <div class="category">
+        <label>
+          Foundation <input type="checkbox">
+        </label>
+      </div>
+      <div class="category">
+        <label>
+          Ceiling <input type="checkbox">
+        </label>
+      </div>
+      <div class="category">
+        <label>
+          Walls <input type="checkbox">
+        </label>
+      </div>
+      <div class="category">
+        <label>
+          Roof <input type="checkbox">
+        </label>
+      </div>
+      <div class="category">
+        <label>
+          Stair <input type="checkbox">
+        </label>
+      </div>
+    </div>
+
+    <!-- Center Grid -->
+    <div class="middle-panel">
+      <div class="grid-bg"></div>
+      <div class="plus-button">+</div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="right-panel">
+      <div class="floor-button">Floors</div>
+      <div class="category">
+        Floor 1 <button>✎</button>
+      </div>
+      <div class="floor-control">
+        <button class="floor-add-button">+</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,66 @@
+/* Grid background */
+.grid-bg {
+    position: absolute;
+    width: 90%;
+    height: 90%;
+    background-image:
+      linear-gradient(var(--border-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+  
+  /* Grid center + button */
+  .plus-button {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: red;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+    bottom: 45%;
+  }
+  
+  /* Sidebar content */
+  .toggle-button,
+  .floor-button {
+    font-size: var(--font-size-heading);
+    font-weight: bold;
+  }
+  
+  .category {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--border-color);
+    padding: 5px;
+    border-radius: 4px;
+  }
+  
+  .category label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    cursor: pointer;
+  }
+  
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .floor-control {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 5px;
+  }
+  
+  .floor-add-button {
+    margin-top: auto;
+  }
+  

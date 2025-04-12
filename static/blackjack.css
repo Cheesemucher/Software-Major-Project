@@ -1,0 +1,93 @@
+/* Blackjack main layout */
+.blackjack-game {
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+    padding: 40px;
+    height: calc(100vh - 70px);
+    background: var(--primary-bg);
+  }
+  
+  /* Left gameplay area */
+  .left-panel-bj {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 40px;
+    padding-right: 20px;
+    color: white;
+    font-size: 20px; /* increased */
+  }
+  
+  /* Right control panel */
+  .right-panel-bj {
+    flex: 1;
+    background: #5c2f28;
+    border-radius: 12px;
+    padding: 40px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 30px;
+    font-size: 20px; /* increased */
+  }
+  
+  /* Card boxes */
+  .bj-card-box {
+    background: var(--accent-color);
+    border-radius: 6px;
+    height: 140px; /* increased */
+    width: 100%;
+  }
+  
+  /* Info blocks */
+  .bj-text-block {
+    font-size: 22px;
+    font-weight: bold;
+    line-height: 1.6;
+  }
+  
+  /* Pot and multiplier */
+  .bj-multiplier-pot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #4a2c27;
+    padding: 14px 24px;
+    border-radius: 10px;
+    font-size: 18px;
+  }
+  
+  .bj-pot {
+    font-weight: bold;
+  }
+  
+  /* Buttons */
+  .bj-button {
+    padding: 18px;
+    font-size: 22px;
+    font-weight: bold;
+    color: white;
+    background: var(--accent-color);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+  }
+  
+  .bj-button:hover {
+    background: #8a3a2f;
+  }
+  
+  /* Bet styling */
+  .bet-amount {
+    background: var(--accent-color);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-weight: bold;
+    display: inline-block;
+    font-size: 22px;
+  }
+  

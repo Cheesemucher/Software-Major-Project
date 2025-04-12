@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Recs</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='recs.css') }}">
+</head>
+<body>
+  <!-- Top Nav Bar -->
+  <div class="top-bar">
+    <a href="{{ url_for('login') }}"><button class="top-button">Login</button></a>
+    <a href="{{ url_for('saves') }}"><button class="top-button">Saves</button></a>
+    <a href="{{ url_for('build') }}"><button class="top-button">Build</button></a>
+    <a href="{{ url_for('recs') }}"><button class="top-button active">Recs</button></a>
+    <a href="{{ url_for('blackjack') }}"><button class="top-button">Blackjack</button></a>
+  </div>
+
+  <!-- Recs Main Layout -->
+  <div class="recs-main">
+    <div class="footprint-box">
+      <h2>Found Footprint:</h2>
+    </div>
+
+    <div class="recs-list">
+      <div class="rec-card">
+        <h3>Feature name 1</h3>
+        <div class="rec-preview"></div>
+      </div>
+
+      <div class="rec-card">
+        <h3>Feature name 2</h3>
+        <div class="rec-preview"></div>
+      </div>
+
+      <div class="rec-card">
+        <h3>Feature name 3</h3>
+        <div class="rec-preview"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

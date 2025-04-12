@@ -1,0 +1,77 @@
+/* Theme variables */
+:root {
+    --primary-bg: #1e1e1e;
+    --secondary-bg: #2d2d2d;
+    --accent-color: #b04e3f;
+    --text-color: white;
+    --border-color: #444;
+  
+    --button-bg: white;
+    --button-text: black;
+  
+    --font-main: 'Segoe UI', sans-serif;
+    --font-size-base: 14px;
+    --font-size-heading: 18px;
+  }
+  
+  /* Base styles */
+  body {
+    margin: 0;
+    background: var(--primary-bg);
+    color: var(--text-color);
+    font-family: var(--font-main);
+    font-size: var(--font-size-base);
+  }
+  
+  /* Top navigation */
+  .top-bar {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+    background: var(--secondary-bg);
+  }
+  
+  .top-button {
+    padding: 20px 40px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    background: var(--button-bg);
+    color: var(--button-text);
+  }
+  
+  .top-button.build {
+    background: var(--accent-color);
+    color: white;
+  }
+  
+  .top-button.active {
+    background: green;
+    color: white;
+  }
+  
+  /* Page layout */
+  .main {
+    display: flex;
+    height: calc(100vh - 70px);
+  }
+  
+  .left-panel,
+  .right-panel {
+    width: 120px;
+    background: var(--accent-color);
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .middle-panel {
+    flex: 1;
+    background: #111;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+  

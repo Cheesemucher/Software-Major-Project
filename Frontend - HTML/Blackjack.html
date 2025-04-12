@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Blackjack</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='blackjack.css') }}">
+</head>
+<body>
+  <!-- Top Nav Bar -->
+  <div class="top-bar">
+    <a href="{{ url_for('login') }}"><button class="top-button">Login</button></a>
+    <a href="{{ url_for('saves') }}"><button class="top-button">Saves</button></a>
+    <a href="{{ url_for('build') }}"><button class="top-button">Build</button></a>
+    <a href="{{ url_for('recs') }}"><button class="top-button">Recs</button></a>
+    <a href="{{ url_for('blackjack') }}"><button class="top-button active">Blackjack</button></a>
+  </div>
+
+  <!-- Blackjack Game Layout -->
+  <div class="blackjack-game">
+    <div class="left-panel-bj">
+      <div class="bj-text-block">
+        <p><strong>Dealer Total</strong><br>13 (2 + A)</p>
+      </div>
+
+      <div class="bj-card-box"></div>
+
+      <div class="bj-multiplier-pot">
+        <span>0x multiplier</span>
+        <span class="bj-pot">Pot: XXX Scrap</span>
+      </div>
+
+      <div class="bj-card-box"></div>
+
+      <div class="bj-text-block">
+        <p><strong>Your Total</strong><br>12 (10 + 2)</p>
+      </div>
+    </div>
+
+    <div class="right-panel-bj">
+      <p><strong>Balance:</strong> 0</p>
+      <p><strong>Bet:</strong> <span class="bet-amount">$$XXX</span></p>
+
+      <button class="bj-button">HIT</button>
+      <button class="bj-button">STAND</button>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Saves</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='saves.css') }}">
+</head>
+<body>
+  <!-- Top Nav Bar -->
+  <div class="top-bar">
+    <a href="{{ url_for('login') }}"><button class="top-button">Login</button></a>
+    <a href="{{ url_for('saves') }}"><button class="top-button active">Saves</button></a>
+    <a href="{{ url_for('build') }}"><button class="top-button">Build</button></a>
+    <a href="{{ url_for('recs') }}"><button class="top-button">Recs</button></a>
+    <a href="{{ url_for('blackjack') }}"><button class="top-button">Blackjack</button></a>
+  </div>
+
+  <!-- Save Cards -->
+  <div class="save-cards-container">
+    <div class="save-card">
+      <div class="save-header">
+        Sample Build Name 1
+        <button class="edit-button">✎</button>
+      </div>
+    </div>
+
+    <div class="save-card add-card">
+      <button class="add-button">+</button>
+    </div>
+  </div>
+</body>
+</html>
