@@ -11,7 +11,7 @@ def home():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == "POST":
+    if request.method == "POST": # Temporary login functionality to get past the login page
         return render_template("Build.html")
 
     return render_template("Login.html")

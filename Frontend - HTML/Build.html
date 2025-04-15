@@ -48,7 +48,7 @@
       </div>
       <div class="category">
         <label>
-          Stair <input type="checkbox">
+          Stairs <input type="checkbox">
         </label>
       </div>
     </div>
@@ -56,19 +56,34 @@
     <!-- Center Grid -->
     <div class="middle-panel">
       <div class="grid-bg"></div>
-      <div class="plus-button">+</div>
+      
+      <!-- Plus button -->
+      <div class="plus-button" onclick="toggleMenu(event)">+</div>
+
+      <!-- Menu that pops up -->
+      <div id="centerMenu" class="popup-menu hidden">
+        <button onclick="console.log('Option A')">Option A</button>
+        <button onclick="console.log('Option B')">Option B</button>
+      </div>
+
     </div>
 
     <!-- Right Sidebar -->
     <div class="right-panel">
       <div class="floor-button">Floors</div>
-      <div class="category">
-        Floor 1 <button>✎</button>
+
+      <div id="floorList">
+        <div class="floor-label">
+          <input type="text" value="Floor 1" disabled />
+          <button onclick="editFloorName(this)">✎</button>
+        </div>
       </div>
-      <div class="floor-control">
-        <button class="floor-add-button">+</button>
-      </div>
+      
+      <button onclick="addFloor()">+</button>
     </div>
+
   </div>
+
+  <script src="{{ url_for('static', filename='js/build.js') }}"></script>
 </body>
 </html>

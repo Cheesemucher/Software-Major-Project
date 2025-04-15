@@ -23,6 +23,23 @@
     font-weight: bold;
     bottom: 45%;
   }
+  .popup-menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #333;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 100;
+  }
+  
+  .hidden {
+    display: none;
+  }
   
   /* Sidebar content */
   .toggle-button,
@@ -57,10 +74,45 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-top: 5px;
+    margin-top: 10px;
   }
   
-  .floor-add-button {
-    margin-top: auto;
+  .floor-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
+  
+  .floor-row input {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    background: #b66a55;
+    color: white;
+  }
+  
+  .floor-row button {
+    padding: 6px 8px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 4px;
+    border: none;
+    background: #444;
+    color: white;
+  }
+  
+  /* Add button below floors */
+  .floor-add-button {
+    padding: 6px 0;
+    font-size: 16px;
+    width: 100%;
+    border: none;
+    background: white;
+    color: black;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
   
