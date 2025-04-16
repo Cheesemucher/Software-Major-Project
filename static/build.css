@@ -22,6 +22,9 @@
     font-size: 18px;
     font-weight: bold;
     bottom: 45%;
+    z-index: 5;
+    pointer-events: auto; /* Just make it easier to click */
+      
   }
   .popup-menu {
     position: absolute;
@@ -114,5 +117,36 @@
     border-radius: 4px;
     cursor: pointer;
   }
+
+  
+/* Define Shape types for drawing */
+  /* Shared tile style */
+.tile {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 16px;
+    color: white;
+    z-index: 5;
+  }
+  
+  /* Square tile style */
+  .tile-square {
+    background: #e26a4a;
+  }
+  
+  /* Triangle tile style */
+  .tile-triangle {
+    width: 0;
+    height: 0;
+    border-left: 40px solid transparent;  /* base / 2 */
+    border-right: 40px solid transparent;
+    border-bottom: 69.28px solid #e26a4a;     /* ≈ 0.866 * 80 -> visually close to equilateral but not quite as the alternative is doing this in JS where you can do matsh and that sounds unpleasant to say the least */
+    position: absolute;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
   
   
