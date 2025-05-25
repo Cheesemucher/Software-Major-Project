@@ -37,14 +37,13 @@ function editFloorName() {
 
 
 // Tile placement stuff
-
 function toggleMenu(e) {
 e.stopPropagation(); // prevent click from bubbling to body
 const menu = document.getElementById("centerMenu");
 menu.classList.toggle("hidden");
 }
 
-// Close menu if clicked anywhere outside
+// Close menu if clicked anywhere outside, super cool beans
 document.addEventListener("click", function (event) {
 const menu = document.getElementById("centerMenu");
 const button = document.querySelector(".plus-button");
@@ -57,26 +56,28 @@ if (!menu.contains(event.target) && !button.contains(event.target)) {
 
 // Reset tile placement point to the center upon initialisation
 let currentPlacementPoint = {
-    x: 0,
-    y: 0,
-    rotation: 0, // in degrees because the drawing tool only uses degrees like a true y10 maths student
+  x: 600,
+  y: 350,
+  rotation: 0, // in degrees because the drawing tool only uses degrees like a true y10 maths student
 };
+console.log(screen.availHeight)
   
-let activePlusButtons = [];
+let activePlusButtons = []; // RANDOM ANNOYING LIST come back here if something is messed up by how the plus things are stored but the stuff stored in this list is meant to be temporary to begin with
 
 // Called when user clicks a tile type in the popup menu
 function placeFromMenu(shapeType) {
-    console.log("Selected shape:", shapeType);  // Debug line
+    console.log("Selected shape:", shapeType);  // Just checking
+    console.log("First Plus Placement Point:", currentPlacementPoint)
     requestTilePlacement(shapeType, TILE_SIDE_LENGTH, currentPlacementPoint);
   }
   
 
 // Sends shape placement request to Flask
-function requestTilePlacement(type, size, originWithRotation) {
+function requestTilePlacement(type, size, originNrotation) {
     console.log("Sending request with:", { // Just check whether the request goes through and is correct
         type,
         size,
-        origin: originWithRotation
+        origin: originNrotation
       });
       
     fetch('/place-shape', {
@@ -85,16 +86,14 @@ function requestTilePlacement(type, size, originWithRotation) {
     body: JSON.stringify({
       type,
       size,
-      origin: {
-        x: originWithRotation.x,
-        y: originWithRotation.y,
-      },
-      rotation: originWithRotation.rotation
+      x: originNrotation.x,
+      y: originNrotation.y,
+      rotation: originNrotation.rotation
     })
   })
   .then(res => res.json())
   .then(data => {
-    data.placed.forEach(tile => renderTile(tile.x, tile.y, tile.type, tile.rotation));
+    data.placed.forEach(tile => renderTile(tile.x, tile.y, tile.type, tile.rotation)); // Gives adjusted places for the shapes to be generated
     removeAllPlusButtons();
     data.plus_points.forEach(p => {
       createPlusButtonAt(p.x, p.y, p.rotation);
@@ -114,15 +113,18 @@ function requestTilePlacement(type, size, originWithRotation) {
 
 // Create red + sign at given location with rotation
 function createPlusButtonAt(x, y, rotation) {
+
+  console.log("New plus button location and rotation", x,y,rotation) // Just debugging where each plus button is generated
+
   const plus = document.createElement("div");
   plus.className = "plus-button";
   plus.textContent = "+";
-  plus.style.left = `${x * 50}px`; // Define a set of coordinates for the + sign in order to store information about where built tiles should go
-  plus.style.top = `${y * 50}px`;
+  plus.style.left = `${x}px`; // Define a set of coordinates for the + sign in order to store information about where built tiles should go
+  plus.style.top = `${y}px`;
   plus.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`; // Define a rotation to store the orientation of built tiles on top of this + sign. This is basically just electron spin now
 
-  plus.onclick = () => {
-    currentPlacementPoint = { x, y, rotation };
+  plus.onclick = () => { 
+    currentPlacementPoint = { x, y, rotation }; // Move the current placement location to the plus button upon being clicked
     toggleMenu();
   };
 
@@ -136,13 +138,13 @@ function removeAllPlusButtons() {
   activePlusButtons = [];
 }
 
-// Shape drawing function
+// Shape drawing function -> make it hide both a triangle and a square and only make the desired one visible
 function renderTile(x, y, type, rotation) {
   const tile = document.createElement("div");
   tile.className = `tile tile-${type}`;
   tile.style.position = "absolute";
-  tile.style.left = `${x * TILE_SIDE_LENGTH}px`;
-  tile.style.top = `${y * TILE_SIDE_LENGTH}px`;
+  tile.style.left = `${x}px`;
+  tile.style.top = `${y}px`;
   tile.style.transformOrigin = "center"; // Anchor the shape to the div to apply transformations more directly
   tile.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`; // Set coordinate indexes to the center of the shape and apply rotations about the center as well
   tile.style.zIndex = 2;
@@ -153,10 +155,10 @@ function renderTile(x, y, type, rotation) {
   }
 
   if (type === "triangle") {
-    tile.style.pointerEvents = "none"; // let plus buttons be clickable as it overlaps those rn
+    tile.style.pointerEvents = "none"; // Let plus buttons be clickable as it overlaps those rn
   }
 
-  document.getElementById("grid").appendChild(tile);
+  document.getElementById("grid").appendChild(tile); // Add the element to the grid div
 }
 
 
