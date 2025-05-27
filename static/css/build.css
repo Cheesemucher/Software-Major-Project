@@ -9,6 +9,15 @@
     background-size: 50px 50px;
   }
   
+  /* Initial plus button wrapper */
+  #initial-plus-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+  }
+
   /* Grid center + button */
   .plus-button {
     position: absolute;
@@ -21,10 +30,9 @@
     align-items: center;
     font-size: 18px;
     font-weight: bold;
-    bottom: 45%;
     z-index: 5;
     pointer-events: auto; /* Just make it easier to click */
-      
+    cursor: pointer;
   }
   .popup-menu {
     position: absolute;
@@ -140,9 +148,9 @@
   .tile-triangle {
     width: 0;
     height: 0;
-    border-left: 40px solid transparent;  /* base / 2 */
+    border-left: 40px solid transparent;  /* TILE_SIDE_LENGTH / 2 */
     border-right: 40px solid transparent;
-    border-bottom: 69.28px solid #e26a4a;     /* ≈ 0.866 * 80 -> visually close to equilateral but not quite as the alternative is doing this in JS where you can do matsh and that sounds unpleasant to say the least */
+    border-bottom: 69.28px solid #e26a4a;  /* height = sqrt(3)/2 * 80 ≈ 69.28px for equilateral triangle */
     position: absolute;
     pointer-events: none;
     z-index: 1;

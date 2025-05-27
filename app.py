@@ -1,7 +1,35 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 import math
+import secrets
+from utils.shapes import (
+    get_square_centre, get_triangle_centre,
+    get_square_edge_positions, get_triangle_edge_positions,
+    check_overlap, TILE_SIDE_LENGTH
+)
 
-app = Flask(__name__, template_folder="Frontend - HTML") # Link to template folder which has a funny name
+app = Flask(__name__)
+app.secret_key = secrets.token_hex(16)  # For session management
+
+# Store placed shapes in session (in production, use a database)
+def get_placed_shapes():
+    if 'placed_shapes' not in session:
+        session['placed_shapes'] = []
+    return session['placed_shapes']
+
+def add_placed_shape(shape_data):
+    shapes = get_placed_shapes()
+    shapes.append(shape_data)
+    session['placed_shapes'] = shapes
+
+def clear_shapes():
+    session['placed_shapes'] = []
+
+def check_shape_overlap(new_shape, existing_shapes):
+    """Check if a new shape would overlap with any existing shapes"""
+    for shape in existing_shapes:
+        if check_overlap(new_shape, shape):
+            return True
+    return False
 
 
 # Routes
@@ -19,6 +47,8 @@ def login():
 
 @app.route("/build")
 def build():
+    # Clear shapes when loading the build page
+    clear_shapes()
     return render_template("Build.html")
 
 @app.route("/place-shape", methods=["POST"]) # Calculate and store location of placed shape
@@ -30,61 +60,63 @@ def place_shape():
     y = data.get("y")
     rotation = data.get("rotation")
 
-    print("Received shape:", shape_type, "at", x, y, "with rotation", rotation)
 
-    new_plus_signs = [] # each sign should be in the format:  { "x": 0, "y": 200, "rotation": 0 } for example
+    new_plus_signs = []
 
     if shape_type == "square":
-        # Find centre coordinates of where generated shape should be (assuming given coordinates of existing + is the base/bottom side)
-        rotation_rad = rotation * math.pi / 180
-        shiftX = side_length/2 * math.cos(rotation_rad) # Finds horizontal and vertical components of distance from midpoint on one side to the centre of the shape
-        shiftY = side_length/2 * math.sin(rotation_rad)
-
-        centre = {"x":x+shiftX, "y":y+shiftY} # Finds centre coords by shifting x and y values respectively to the centre
-
-        # Find Midpoints of each side
-        for k in range(4): # Iterate through an angle for each of the sides
-            angle_to_point = rotation_rad + k * (math.pi/2) # Find an angle from the center to the midpoint based on rotation
-            mX = centre["x"] + side_length/2 * math.sin(angle_to_point)
-            mY = centre["y"] - side_length/2 * math.cos(angle_to_point) # y value needs subtracting as top left is 0 so adding makes it go down
-            #if mY != y and mX != x: # Only add it to the list if it isnt the original + sign the user clicked on to generate the shape
-            new_plus_signs.append({"x": mX, "y": mY, "rotation": angle_to_point * 180 / math.pi}) # Angle needs to be sent back in degrees tragic
-
-            print(f"plus {k} angle: {angle_to_point} or {angle_to_point * 180 / math.pi} degrees")
+        centre = get_square_centre(x, y, rotation)
+        new_plus_signs = get_square_edge_positions(centre, rotation)
 
 
-    elif shape_type == "triangle": # Gonna have different maths for different shapes innit
-        # Find centre coordinates of where generated shape should be
-        height = math.sqrt(3)/2 * side_length
-        dist_to_centre = height / 3  # oh yea medians of a triangle are concurrent
 
-        rotation_rad = rotation * math.pi / 180
-        shiftX = dist_to_centre * math.cos(rotation_rad) # How much you need to shift the coordinates to find the centre of where the generated shape will be
-        shiftY = dist_to_centre * math.sin(rotation_rad) # Same but y-axis
-
-        centre = {"x":x+shiftX, "y":y+shiftY}
-        print(centre)
-
-        # Find Midpoints of each side
-        for k in range(3): # Same deal but with 3 sides
-            angle_to_point = rotation_rad - math.pi/3 + k * (2*math.pi/3)
-            mX = centre["x"] + side_length/2 * math.cos(angle_to_point)
-            mY = centre["y"] + side_length/2 * math.sin(angle_to_point)
-            new_plus_signs.append({"x": mX, "y": mY, "rotation": angle_to_point})
-
-            #if mY != y and mX != x: 
-            new_plus_signs.append({"x": mX, "y": mY, "rotation": angle_to_point * 180 / math.pi})
-
+    elif shape_type == "triangle":
+        centre = get_triangle_centre(x, y, rotation)
+        new_plus_signs = get_triangle_edge_positions(centre, rotation)
     else:
-        print("Not supposed to be here bro")
+        return jsonify({"error": "Invalid shape type", "placed": [], "plus_points": []})
 
-    # Necessary output: information about shape to be placed and + signs to be generated
+    # Check if this shape would overlap with existing shapes
+    new_shape = {"x": centre["x"], "y": centre["y"], "type": shape_type, "rotation": rotation}
+    existing_shapes = get_placed_shapes()
+    
+    
+    if check_shape_overlap(new_shape, existing_shapes):
+        # Shape would overlap - don't place it
+        return jsonify({
+            "error": "Shape would overlap with existing shapes",
+            "placed": [],
+            "plus_points": []
+        })
+    
+    # Add the shape to our tracking
+    add_placed_shape(new_shape)
+    
+    # Filter plus signs - remove any that would cause overlaps
+    filtered_plus_signs = []
+    for plus_sign in new_plus_signs:
+        # Check if placing a square at this plus sign would overlap
+        potential_square = get_square_centre(plus_sign["x"], plus_sign["y"], plus_sign["rotation"])
+        potential_square["type"] = "square"
+        
+        # Check if placing a triangle at this plus sign would overlap
+        potential_triangle = get_triangle_centre(plus_sign["x"], plus_sign["y"], plus_sign["rotation"])
+        potential_triangle["type"] = "triangle"
+        
+        # Only include plus sign if at least one shape type can be placed without overlap
+        square_overlaps = check_shape_overlap(potential_square, existing_shapes)
+        triangle_overlaps = check_shape_overlap(potential_triangle, existing_shapes)
+        
+        if not square_overlaps or not triangle_overlaps:
+            filtered_plus_signs.append(plus_sign)
+    
     return jsonify({
-        "placed": [ # information about shape to be placed
-            { "x": centre["x"], "y": centre["y"], "type": shape_type, "rotation": rotation} # eg: { "x": 0, "y": 0, "type": "square", "rotation": 90 }   
-        ],
-        "plus_points": new_plus_signs
-        # location and rotations of plus signs to be generated
+        "placed": [{
+            "x": centre["x"], 
+            "y": centre["y"], 
+            "type": shape_type, 
+            "rotation": rotation
+        }],
+        "plus_points": filtered_plus_signs
     })
 
 

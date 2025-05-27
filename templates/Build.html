@@ -7,8 +7,8 @@
   <title>Build</title>
 
   <!-- Link external CSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='build.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/build.css') }}">
 </head>
 
 
@@ -62,7 +62,7 @@
     
       <!-- Center Plus Button with wrapper to be easily removed later -->
       <div id="initial-plus-wrapper">
-        <div class="plus-button" onclick="toggleMenu(event)">+</div>
+        <div class="plus-button" onclick="toggleMenu(event)" style="position: relative;">+</div>
       </div>
 
     

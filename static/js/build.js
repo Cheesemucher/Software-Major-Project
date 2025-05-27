@@ -1,5 +1,6 @@
-let floorCount = 1; // Since the user starts with a floor, the functions should take into account the existence of one floor already so just initialise the JS with one floor
-const TILE_SIDE_LENGTH = 80; // How big the shape side lengths will generally be (in px)
+let floorCount = 1;
+const TILE_SIDE_LENGTH = 80;
+let placedShapes = [];
 
 // Floor menu stuff
 function addFloor() {
@@ -38,47 +39,87 @@ function editFloorName() {
 
 // Tile placement stuff
 function toggleMenu(e) {
-e.stopPropagation(); // prevent click from bubbling to body
-const menu = document.getElementById("centerMenu");
-menu.classList.toggle("hidden");
+  if (e) e.stopPropagation(); // prevent click from bubbling to body
+  const menu = document.getElementById("centerMenu");
+  menu.classList.toggle("hidden");
+  
+  // Position menu near the clicked plus button
+  if (e && e.target) {
+    const rect = e.target.getBoundingClientRect();
+    menu.style.left = rect.left + 'px';
+    menu.style.top = (rect.bottom + 10) + 'px';
+    menu.style.transform = 'none';
+  }
 }
 
-// Close menu if clicked anywhere outside, super cool beans
+// Close menu if clicked anywhere outside
 document.addEventListener("click", function (event) {
-const menu = document.getElementById("centerMenu");
-const button = document.querySelector(".plus-button");
+  const menu = document.getElementById("centerMenu");
+  const plusButtons = document.querySelectorAll(".plus-button");
+  
+  // Check if click is on any plus button
+  let clickedOnPlus = false;
+  plusButtons.forEach(btn => {
+    if (btn.contains(event.target)) clickedOnPlus = true;
+  });
 
-// If the click is NOT on the menu or the + button, hide it
-if (!menu.contains(event.target) && !button.contains(event.target)) {
+  // If the click is NOT on the menu or any + button, hide it
+  if (!menu.contains(event.target) && !clickedOnPlus) {
     menu.classList.add("hidden");
-}
+  }
 });
 
-// Reset tile placement point to the center upon initialisation
+// Initialise placement point - will be set properly after DOM loads
 let currentPlacementPoint = {
-  x: 600,
-  y: 350,
-  rotation: 0, // in degrees because the drawing tool only uses degrees like a true y10 maths student
+  x: 0,
+  y: 0,
+  rotation: 0
 };
-console.log(screen.availHeight)
+
+// Set initial placement point after DOM loads
+window.addEventListener('DOMContentLoaded', function() {
+  const gridContainer = document.querySelector('.middle-panel');
+  if (gridContainer) {
+    const rect = gridContainer.getBoundingClientRect();
+    currentPlacementPoint.x = rect.left + rect.width / 2;
+    currentPlacementPoint.y = rect.top + rect.height / 2;
+    
+    // Also update the initial plus button position
+    const initialPlusWrapper = document.getElementById('initial-plus-wrapper');
+    if (initialPlusWrapper) {
+      initialPlusWrapper.style.left = '50%';
+      initialPlusWrapper.style.top = '50%';
+    }
+  }
+});
   
-let activePlusButtons = []; // RANDOM ANNOYING LIST come back here if something is messed up by how the plus things are stored but the stuff stored in this list is meant to be temporary to begin with
+let activePlusButtons = [];
 
 // Called when user clicks a tile type in the popup menu
 function placeFromMenu(shapeType) {
-    console.log("Selected shape:", shapeType);  // Just checking
-    console.log("First Plus Placement Point:", currentPlacementPoint)
+    
+    // For the initial placement, use the actual position of the initial plus button
+    const initialPlus = document.getElementById("initial-plus-wrapper");
+    if (initialPlus) {
+      const plusButton = initialPlus.querySelector('.plus-button');
+      const rect = plusButton.getBoundingClientRect();
+      const grid = document.getElementById('grid');
+      const gridRect = grid.getBoundingClientRect();
+      
+      // Convert to grid-relative coordinates
+      currentPlacementPoint = {
+        x: rect.left + rect.width/2 - gridRect.left,
+        y: rect.top + rect.height/2 - gridRect.top,
+        rotation: 0
+      };
+    }
+    
     requestTilePlacement(shapeType, TILE_SIDE_LENGTH, currentPlacementPoint);
   }
   
 
 // Sends shape placement request to Flask
 function requestTilePlacement(type, size, originNrotation) {
-    console.log("Sending request with:", { // Just check whether the request goes through and is correct
-        type,
-        size,
-        origin: originNrotation
-      });
       
     fetch('/place-shape', {
     method: 'POST',
@@ -93,13 +134,26 @@ function requestTilePlacement(type, size, originNrotation) {
   })
   .then(res => res.json())
   .then(data => {
-    data.placed.forEach(tile => renderTile(tile.x, tile.y, tile.type, tile.rotation)); // Gives adjusted places for the shapes to be generated
+    if (data.error) {
+      console.log("Error placing shape:", data.error);
+      // Close the menu without placing anything
+      const menu = document.getElementById("centerMenu");
+      if (menu) {
+        menu.classList.add("hidden");
+      }
+      return;
+    }
+    
+    data.placed.forEach(tile => {
+      renderTile(tile.x, tile.y, tile.type, tile.rotation);
+      placedShapes.push({x: tile.x, y: tile.y, type: tile.type, rotation: tile.rotation});
+    });
     removeAllPlusButtons();
     data.plus_points.forEach(p => {
       createPlusButtonAt(p.x, p.y, p.rotation);
     });
 
-    // TEMPORARY CHUNK OF CODE to remove initial static plus and menu if they still exist upon successful tile gen
+    // Remove initial plus button and hide menu after first shape placement
     const initialPlus = document.getElementById("initial-plus-wrapper");
     if (initialPlus) {
     initialPlus.remove();
@@ -114,18 +168,17 @@ function requestTilePlacement(type, size, originNrotation) {
 // Create red + sign at given location with rotation
 function createPlusButtonAt(x, y, rotation) {
 
-  console.log("New plus button location and rotation", x,y,rotation) // Just debugging where each plus button is generated
 
   const plus = document.createElement("div");
   plus.className = "plus-button";
   plus.textContent = "+";
-  plus.style.left = `${x}px`; // Define a set of coordinates for the + sign in order to store information about where built tiles should go
+  plus.style.left = `${x}px`;
   plus.style.top = `${y}px`;
-  plus.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`; // Define a rotation to store the orientation of built tiles on top of this + sign. This is basically just electron spin now
+  plus.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
 
-  plus.onclick = () => { 
+  plus.onclick = (e) => { 
     currentPlacementPoint = { x, y, rotation }; // Move the current placement location to the plus button upon being clicked
-    toggleMenu();
+    toggleMenu(e);
   };
 
   document.getElementById("grid").appendChild(plus);
@@ -138,43 +191,33 @@ function removeAllPlusButtons() {
   activePlusButtons = [];
 }
 
-// Shape drawing function -> make it hide both a triangle and a square and only make the desired one visible
+// Shape drawing function
 function renderTile(x, y, type, rotation) {
   const tile = document.createElement("div");
   tile.className = `tile tile-${type}`;
   tile.style.position = "absolute";
   tile.style.left = `${x}px`;
   tile.style.top = `${y}px`;
-  tile.style.transformOrigin = "center"; // Anchor the shape to the div to apply transformations more directly
-  tile.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`; // Set coordinate indexes to the center of the shape and apply rotations about the center as well
+  tile.style.transformOrigin = "center";
   tile.style.zIndex = 2;
 
   if (type === "square") {
     tile.style.width = `${TILE_SIDE_LENGTH}px`;
     tile.style.height = `${TILE_SIDE_LENGTH}px`;
+    tile.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
   }
 
   if (type === "triangle") {
-    tile.style.pointerEvents = "none"; // Let plus buttons be clickable as it overlaps those rn
+    // CSS triangles need special positioning due to border-based rendering
+    const height = Math.sqrt(3)/2 * TILE_SIDE_LENGTH;
+    const centroidFromTop = (2 * height) / 3;  // Distance from top of triangle to centroid
+    
+    // Position so the centroid is at (x, y)
+    tile.style.transform = `translate(-50%, -${centroidFromTop}px) rotate(${rotation}deg)`;
+    tile.style.transformOrigin = `50% ${centroidFromTop}px`;
+    tile.style.pointerEvents = "none"; // Allow plus buttons to be clickable
   }
 
-  document.getElementById("grid").appendChild(tile); // Add the element to the grid div
+  document.getElementById("grid").appendChild(tile);
 }
 
-
-
-// Show/hide shape selector menu
-function toggleMenu() {
-  const menu = document.getElementById("centerMenu");
-  menu.classList.toggle("hidden");
-}
-
-// Click-outside-to-close behavior
-document.addEventListener("click", function (e) {
-  const menu = document.getElementById("centerMenu");
-  const plusBtn = document.querySelector(".plus-button");
-
-  if (!menu.contains(e.target) && !plusBtn.contains(e.target)) {
-    menu.classList.add("hidden");
-  }
-});
