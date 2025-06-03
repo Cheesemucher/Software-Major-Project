@@ -36,9 +36,18 @@ function editFloorName() {
   }
 
 
+// Initialise placement point - will be set properly after DOM loads
+let currentPlacementPoint = {
+  x: 0,
+  y: 0,
+  rotation: 0
+};
+
+let selectedPlus = document.getElementById("initial-plus-wrapper");
 
 // Tile placement stuff
 function toggleMenu(e) {
+  console.log(activePlusButtons, "extra active list upon clicking menu") // extra active list for debugging
   if (e) e.stopPropagation(); // prevent click from bubbling to body
   const menu = document.getElementById("centerMenu");
   menu.classList.toggle("hidden");
@@ -46,8 +55,8 @@ function toggleMenu(e) {
   // Position menu near the clicked plus button
   if (e && e.target) {
     const rect = e.target.getBoundingClientRect();
-    menu.style.left = rect.left + 'px';
-    menu.style.top = (rect.bottom + 10) + 'px';
+    menu.style.left = (currentPlacementPoint.x - 50) + 'px';
+    menu.style.top = (currentPlacementPoint.y - 30) + 'px';
     menu.style.transform = 'none';
   }
 }
@@ -68,13 +77,6 @@ document.addEventListener("click", function (event) {
     menu.classList.add("hidden");
   }
 });
-
-// Initialise placement point - will be set properly after DOM loads
-let currentPlacementPoint = {
-  x: 0,
-  y: 0,
-  rotation: 0
-};
 
 // Set initial placement point after DOM loads
 window.addEventListener('DOMContentLoaded', function() {
@@ -113,13 +115,15 @@ function placeFromMenu(shapeType) {
         rotation: 0
       };
     }
-    
-    requestTilePlacement(shapeType, TILE_SIDE_LENGTH, currentPlacementPoint);
+    console.log(selectedPlus, "for deletion")
+    removePlusButton(selectedPlus) // Selected plus is also a public variable that is set to a particular plus upon click
+    console.log(activePlusButtons, "updated active list")
+    requestTilePlacement(shapeType, TILE_SIDE_LENGTH, currentPlacementPoint); // Current placement point information is currently stored as a public variable and not really passed through this function as I am not sure how to pass the position info from the clicked plus button to the HTML that defines the menu then back when the placeFromMenu function is called on click
   }
   
 
 // Sends shape placement request to Flask
-function requestTilePlacement(type, size, originNrotation) {
+function requestTilePlacement(type, size, originNrotation, chosenButton) {
       
     fetch('/place-shape', {
     method: 'POST',
@@ -144,14 +148,28 @@ function requestTilePlacement(type, size, originNrotation) {
       return;
     }
     
+    // Handle tile placing
     data.placed.forEach(tile => {
       renderTile(tile.x, tile.y, tile.type, tile.rotation);
       placedShapes.push({x: tile.x, y: tile.y, type: tile.type, rotation: tile.rotation});
     });
-    removeAllPlusButtons();
+
+    // Handle Plus button generation
+    removeAllPlusButtons()
+
+    console.log(activePlusButtons, "pre adding stuff")
     data.plus_points.forEach(p => {
-      createPlusButtonAt(p.x, p.y, p.rotation);
+      // each p is should be: { x: Number, y: Number, rotation: Number }
+      activePlusButtons.push(p)
     });
+    console.log(activePlusButtons, "post adding stuff")
+
+    activePlusButtons.forEach(button => {
+      console.log(button.rotation)
+      createPlusButtonAt(button.x, button.y, button.rotation);
+    });
+
+    
 
     // Remove initial plus button and hide menu after first shape placement
     const initialPlus = document.getElementById("initial-plus-wrapper");
@@ -168,7 +186,6 @@ function requestTilePlacement(type, size, originNrotation) {
 // Create red + sign at given location with rotation
 function createPlusButtonAt(x, y, rotation) {
 
-
   const plus = document.createElement("div");
   plus.className = "plus-button";
   plus.textContent = "+";
@@ -179,16 +196,27 @@ function createPlusButtonAt(x, y, rotation) {
   plus.onclick = (e) => { 
     currentPlacementPoint = { x, y, rotation }; // Move the current placement location to the plus button upon being clicked
     toggleMenu(e);
+    selectedPlus = {x, y, rotation}
+    console.log(selectedPlus)
   };
 
   document.getElementById("grid").appendChild(plus);
-  activePlusButtons.push(plus);
+  //activePlusButtons.push(plus); // Changed the place where buttons are added to the list into the requestTilePlacement function
 }
 
 // Remove all + signs before placing new ones
 function removeAllPlusButtons() {
-  activePlusButtons.forEach(btn => btn.remove());
-  activePlusButtons = [];
+  document.querySelectorAll('.plus-button').forEach(div => div.remove());
+}
+
+// Remove the single plus button that was clicked on from the activePlusButtons array
+function removePlusButton(buttonInfo) {
+  console.log("removed button", buttonInfo)
+  activePlusButtons = activePlusButtons.filter(item =>
+    !(item.x === buttonInfo.x &&
+      item.y === buttonInfo.y &&
+      item.rotation === buttonInfo.rotation)
+  ); // Checks for info as the data stored in the list is by arrays of each button's coordinates yet doesn't directly match identical arrays as JS checks where the data is stored and not what the values in the arrays
 }
 
 // Shape drawing function
@@ -205,6 +233,8 @@ function renderTile(x, y, type, rotation) {
     tile.style.width = `${TILE_SIDE_LENGTH}px`;
     tile.style.height = `${TILE_SIDE_LENGTH}px`;
     tile.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+    tile.style.boxSizing = "border-box";
+    tile.style.border = "0.5px solid black";
   }
 
   if (type === "triangle") {
@@ -216,6 +246,7 @@ function renderTile(x, y, type, rotation) {
     tile.style.transform = `translate(-50%, -${centroidFromTop}px) rotate(${rotation}deg)`;
     tile.style.transformOrigin = `50% ${centroidFromTop}px`;
     tile.style.pointerEvents = "none"; // Allow plus buttons to be clickable
+    tile.style.boxShadow = "inset 0 0 0 1px black"; // Use shadow to create a border as triangles do not follow the HTML div and need CSS concepts to style or smth
   }
 
   document.getElementById("grid").appendChild(tile);

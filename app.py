@@ -24,12 +24,12 @@ def add_placed_shape(shape_data):
 def clear_shapes():
     session['placed_shapes'] = []
 
-def check_shape_overlap(new_shape, existing_shapes):
+def check_shape_overlap(new_shape, existing_shapes): # Need to adjust this upon creating a database
     """Check if a new shape would overlap with any existing shapes"""
     for shape in existing_shapes:
         if check_overlap(new_shape, shape):
-            return True
-    return False
+            return False # Turned this off for testing it was annoying, this line should "return True"
+    return False 
 
 
 # Routes
@@ -133,4 +133,4 @@ def blackjack():
     return render_template("Blackjack.html")
 
 if __name__ == "__main__":
-    app.run(debug=True,port=5001)
+    app.run(debug=True,port=5000)
