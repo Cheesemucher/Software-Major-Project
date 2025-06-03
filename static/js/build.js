@@ -123,7 +123,7 @@ function placeFromMenu(shapeType) {
   
 
 // Sends shape placement request to Flask
-function requestTilePlacement(type, size, originNrotation, chosenButton) {
+function requestTilePlacement(type, size, originNrotation) {
       
     fetch('/place-shape', {
     method: 'POST',
@@ -211,12 +211,28 @@ function removeAllPlusButtons() {
 
 // Remove the single plus button that was clicked on from the activePlusButtons array
 function removePlusButton(buttonInfo) {
-  console.log("removed button", buttonInfo)
-  activePlusButtons = activePlusButtons.filter(item =>
-    !(item.x === buttonInfo.x &&
-      item.y === buttonInfo.y &&
-      item.rotation === buttonInfo.rotation)
-  ); // Checks for info as the data stored in the list is by arrays of each button's coordinates yet doesn't directly match identical arrays as JS checks where the data is stored and not what the values in the arrays
+  console.log("removed button", buttonInfo);
+
+  // Found is a boolean and index is the location of the item if found or '-1' if not found
+  const { found, index } = compareButtonInfo(buttonInfo);
+
+  if (found) {
+    activePlusButtons.splice(index, 1);
+  }
+}
+
+function compareButtonInfo(buttonInfo) {
+  // Checks for info as the data stored in the list is by arrays of each button's coordinates yet doesn't directly match identical arrays as JS checks where the data is stored and not what the values in the arrays
+  const idx = activePlusButtons.findIndex(item =>
+    item.x === buttonInfo.x &&
+    item.y === buttonInfo.y &&
+    item.rotation === buttonInfo.rotation
+  );
+    console.log(idx)
+  return {
+    found: idx !== -1,
+    index: idx
+  };
 }
 
 // Shape drawing function
