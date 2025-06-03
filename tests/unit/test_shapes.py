@@ -29,7 +29,7 @@ class TestShapeCalculations(unittest.TestCase):
         # Click with 90 degree rotation (rightward)
         centre = get_square_centre(0, 0, 90)
         self.assertEqual(centre["x"], 40)
-        self.assertEqual(centre["y"], 0)
+        self.assertAlmostEqual(centre["y"], 0, places=10)
     
     def test_triangle_centre_calculation(self):
         """Test triangle centre calculation from edge point"""
