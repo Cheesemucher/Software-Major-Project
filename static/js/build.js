@@ -115,9 +115,7 @@ function placeFromMenu(shapeType) {
         rotation: 0
       };
     }
-    console.log(selectedPlus, "for deletion")
-    removePlusButton(selectedPlus) // Selected plus is also a public variable that is set to a particular plus upon click
-    console.log(activePlusButtons, "updated active list")
+
     requestTilePlacement(shapeType, TILE_SIDE_LENGTH, currentPlacementPoint); // Current placement point information is currently stored as a public variable and not really passed through this function as I am not sure how to pass the position info from the clicked plus button to the HTML that defines the menu then back when the placeFromMenu function is called on click
   }
   
@@ -155,21 +153,19 @@ function requestTilePlacement(type, size, originNrotation) {
     });
 
     // Handle Plus button generation
-    removeAllPlusButtons()
-
-    console.log(activePlusButtons, "pre adding stuff")
     data.plus_points.forEach(p => {
-      // each p is should be: { x: Number, y: Number, rotation: Number }
-      activePlusButtons.push(p)
+      // each p should be in the form { x: Number, y: Number, rotation: Number }
+      addButton(p, p.x, p.y, p.rotation)
     });
-    console.log(activePlusButtons, "post adding stuff")
+
+    // Get rid of all the existing buttons before redrawing them
+    removeAllPlusButtons()
+    removePlusButton(selectedPlus) // Selected plus is also a public variable that is set to a particular plus upon click
 
     activePlusButtons.forEach(button => {
-      console.log(button.rotation)
-      createPlusButtonAt(button.x, button.y, button.rotation);
+      console.log(button.rotation);
+      drawPlusButtonAt(button.x, button.y, button.rotation);
     });
-
-    
 
     // Remove initial plus button and hide menu after first shape placement
     const initialPlus = document.getElementById("initial-plus-wrapper");
@@ -183,8 +179,21 @@ function requestTilePlacement(type, size, originNrotation) {
   });
 }
 
-// Create red + sign at given location with rotation
-function createPlusButtonAt(x, y, rotation) {
+function addButton(button,x,y,rotation) {
+  buttonInfo = {x, y, rotation}
+  const { found, index } = compareButtonInfo(buttonInfo); // Check if each new button to add it already in the list
+
+  if (found) {
+    activePlusButtons.splice(index, 1); // Remove it if found
+  }
+
+  else {
+    activePlusButtons.push(button); // Otherwise add it to the list
+  }
+}
+
+// Draw red + sign at given location with rotation
+function drawPlusButtonAt(x, y, rotation) {
 
   const plus = document.createElement("div");
   plus.className = "plus-button";
@@ -204,7 +213,7 @@ function createPlusButtonAt(x, y, rotation) {
   //activePlusButtons.push(plus); // Changed the place where buttons are added to the list into the requestTilePlacement function
 }
 
-// Remove all + signs before placing new ones
+// Remove all + buttons before placing new ones
 function removeAllPlusButtons() {
   document.querySelectorAll('.plus-button').forEach(div => div.remove());
 }
@@ -217,21 +226,22 @@ function removePlusButton(buttonInfo) {
   const { found, index } = compareButtonInfo(buttonInfo);
 
   if (found) {
+    console.log("button found in list position", index)
     activePlusButtons.splice(index, 1);
   }
 }
 
 function compareButtonInfo(buttonInfo) {
   // Checks for info as the data stored in the list is by arrays of each button's coordinates yet doesn't directly match identical arrays as JS checks where the data is stored and not what the values in the arrays
-  const idx = activePlusButtons.findIndex(item =>
+  const id = activePlusButtons.findIndex(item =>
     item.x === buttonInfo.x &&
-    item.y === buttonInfo.y &&
-    item.rotation === buttonInfo.rotation
-  );
-    console.log(idx)
+    item.y === buttonInfo.y
+    // Don't check for a matching rotation here as we don't want overlapping button positions no matter the orientation
+    );
+
   return {
-    found: idx !== -1,
-    index: idx
+    found: id !== -1, // Return whether the index is -1
+    index: id
   };
 }
 
