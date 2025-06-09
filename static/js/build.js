@@ -163,7 +163,6 @@ function requestTilePlacement(type, size, originNrotation) {
     removePlusButton(selectedPlus) // Selected plus is also a public variable that is set to a particular plus upon click
 
     activePlusButtons.forEach(button => {
-      console.log(button.rotation);
       drawPlusButtonAt(button.x, button.y, button.rotation);
     });
 
