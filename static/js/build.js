@@ -47,7 +47,6 @@ let selectedPlus = document.getElementById("initial-plus-wrapper");
 
 // Tile placement stuff
 function toggleMenu(e) {
-  console.log(activePlusButtons, "extra active list upon clicking menu") // extra active list for debugging
   if (e) e.stopPropagation(); // prevent click from bubbling to body
   const menu = document.getElementById("centerMenu");
   menu.classList.toggle("hidden");
@@ -205,7 +204,6 @@ function drawPlusButtonAt(x, y, rotation) {
     currentPlacementPoint = { x, y, rotation }; // Move the current placement location to the plus button upon being clicked
     toggleMenu(e);
     selectedPlus = {x, y, rotation}
-    console.log(selectedPlus)
   };
 
   document.getElementById("grid").appendChild(plus);
