@@ -1,4 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+from data import db, User
+from auth import user_auth_register # apparently the star is evil, change this to import each individual function later
+from asyncio import *
 import math
 import secrets
 from utils.shapes import (
@@ -8,7 +11,11 @@ from utils.shapes import (
 )
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///example_test_db.db'
+db.init_app(app)
 app.secret_key = secrets.token_hex(16)  # For session management
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent XXS and JS 
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'  # Helps prevent CSRF attacks from different sites
 
 # Store placed shapes in session (in production, use a database)
 def get_placed_shapes():
@@ -24,6 +31,7 @@ def add_placed_shape(shape_data):
 def clear_shapes():
     session['placed_shapes'] = []
 
+# Helper function to check for shape overlap, could maybe move to the db helper functions file since it needs to read information from there or at least abstract this function
 def check_shape_overlap(new_shape, existing_shapes): # Need to adjust this upon creating a database
     """Check if a new shape would overlap with any existing shapes"""
     for shape in existing_shapes:
@@ -35,15 +43,34 @@ def check_shape_overlap(new_shape, existing_shapes): # Need to adjust this upon 
 # Routes
 @app.route("/") # Immediately redirect to login from root
 def home():
-    return redirect(url_for("login"))
+    return render_template("Login.html")
 
 
 @app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST": # Temporary login functionality to get past the login page
-        return render_template("Build.html")
+def login(): #HTTP route to log in a user.
+    # Retrieving input
+    email = request.form.get('email')
+    password = request.form.get('password')
 
-    return render_template("Login.html")
+
+    print(f"email:{email}, password:{password}")
+    try:
+        # Generating session/CSRF token and passing them to frontend
+        session_token, csrf_token = user_auth_register(email, password) # make this an await later it doesnt work rn for some reason
+        '''return jsonify({"message": "User registered successfully", 
+                        "session_token": session_token, 
+                        "csrf_token": csrf_token}), 201''' #put this back when tokens are put in
+        return render_template("Build.html")
+    
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        return jsonify({"error": str(e)}), 406
+
+    
+
+@app.route("/register", methods=["POST"])
+def register():
+    pass
 
 @app.route("/build")
 def build():
@@ -134,3 +161,7 @@ def blackjack():
 
 if __name__ == "__main__":
     app.run(debug=True,port=5000)
+
+    with app.app_context():
+        db.create_all()
+        app.run()
