@@ -1,48 +1,61 @@
 from flask import abort
 from data import db, User
-from asyncio import *
 
 
-async def user_auth_register(email, password):
-    """Registering user and generating session token and CSRF token"""
-    email = email.lower()  # Normalize the email to lowercase
-    if email in db:
-        abort(400, description="Email already exists")
-    new_user = User(email, password)
+def user_auth_register(email, password):
+    """Register user and generate session token and CSRF token"""
+    email = email.lower()
     
-    db[email] = new_user  # Store the user object by email
+    # Check if user already exists
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        raise ValueError("Email already exists")
+    
+    # Create new user
+    new_user = User(email, password)
+    db.session.add(new_user)
+    db.session.commit()
+    
     return new_user.session_token, new_user.csrf_token
 
-async def user_auth_login(email, password_input):
-    """Logging in user, and generating session token and CSRF token"""
-    email = email.lower()  # Normalize the email to lowercase
-    if email not in db:
-        abort(401, description="Email does not exist")
-    user = db[email]
-    if not await user.verify_password(password_input):
-        abort(401, description="Invalid password")
 
+def user_auth_login(email, password_input):
+    """Log in user and generate session token and CSRF token"""
+    email = email.lower()
+    
+    # Find user by email
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        raise ValueError("Invalid email or password")
+    
+    # Verify password
+    if not user.verify_password(password_input):
+        raise ValueError("Invalid email or password")
+    
+    # Generate new tokens
     user.assign_tokens()
+    
     return user.session_token, user.csrf_token
 
-async def user_auth_logout(session_token, csrf_token):
-    """Logging out the user with provided session token and CSRF token"""
-    for user in db.values():
-        if await user.validate_tokens(session_token, csrf_token):
-            await user.revoke_tokens()
-            return
-    abort(401, description="Token does not exist")
 
-async def user_auth_validate_token(session_token, csrf_token):
-    """Validating whether session token and CSRF token exist"""
-    # Debugging email - session_token - csrf_token relationships
-    for user in db.values():
-        print(f'{user.email} is for {user.session_token} and {user.csrf_token}')
+def user_auth_logout(session_token, csrf_token):
+    """Log out the user with provided session token and CSRF token"""
+    # Find user by session token
+    user = User.query.filter_by(session_token=session_token).first()
+    
+    if user and user.validate_tokens(session_token, csrf_token):
+        user.revoke_tokens()
+        return
+    
+    raise ValueError("Invalid or expired tokens")
 
-    for user in db.values():
-        if await user.validate_tokens(session_token, csrf_token):
-            print("Valid tokens")
-            return True
 
-    print("Invalid tokens")
-    abort(401, description="Token does not exist")
+def user_auth_validate_token(session_token, csrf_token):
+    """Validate whether session token and CSRF token exist and are valid"""
+    # Find user by session token
+    user = User.query.filter_by(session_token=session_token).first()
+    
+    if user and user.validate_tokens(session_token, csrf_token):
+        return True
+    
+    return False

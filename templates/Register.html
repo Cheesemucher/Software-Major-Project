@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <title>Login</title>
+  <title>Register</title>
 
   <!-- Link external CSSes -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -18,13 +18,13 @@
   <div class="construct-title">
     <span class="title-left">Con</span><span class="title-right">struct</span><span class="title-left">ion Website</span>
   </div>
-  <!-- Login form container -->
+  <!-- Registration form container -->
   <div class="login-container">
-    <h2>Login</h2>
+    <h2>Register</h2>
     {% if error %}
       <div class="error-message" style="color: red; margin-bottom: 10px;">{{ error }}</div>
     {% endif %}
-    <form method="POST" action="/login">
+    <form method="POST" action="/register">
       {{ form.hidden_tag() }}
       
       <label for="email">{{ form.email.label }}</label>
@@ -41,7 +41,7 @@
 
       {{ form.submit(class="login-btn") }}
     </form>
-    <p style="margin-top: 15px;">Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+    <p style="margin-top: 15px;">Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
   </div>
 
 </body>

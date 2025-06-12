@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+from flask_wtf.csrf import CSRFProtect
 from data import db, User
-from auth import user_auth_register # apparently the star is evil, change this to import each individual function later
-from asyncio import *
+from auth import user_auth_register, user_auth_login, user_auth_logout, user_auth_validate_token
+from forms import LoginForm, RegisterForm
+from config import Config
 import math
-import secrets
 from utils.shapes import (
     get_square_centre, get_triangle_centre,
     get_square_edge_positions, get_triangle_edge_positions,
@@ -11,11 +12,9 @@ from utils.shapes import (
 )
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///example_test_db.db'
+app.config.from_object(Config)
 db.init_app(app)
-app.secret_key = secrets.token_hex(16)  # For session management
-app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent XXS and JS 
-app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'  # Helps prevent CSRF attacks from different sites
+csrf = CSRFProtect(app)
 
 # Store placed shapes in session (in production, use a database)
 def get_placed_shapes():
@@ -32,54 +31,127 @@ def clear_shapes():
     session['placed_shapes'] = []
 
 # Helper function to check for shape overlap, could maybe move to the db helper functions file since it needs to read information from there or at least abstract this function
-def check_shape_overlap(new_shape, existing_shapes): # Need to adjust this upon creating a database
+def check_shape_overlap(new_shape, existing_shapes):
     """Check if a new shape would overlap with any existing shapes"""
     for shape in existing_shapes:
         if check_overlap(new_shape, shape):
-            return False # Turned this off for testing it was annoying, this line should "return True"
+            return True
     return False 
 
 
 # Routes
-@app.route("/") # Immediately redirect to login from root
+@app.route("/")
 def home():
-    return render_template("Login.html")
+    return redirect(url_for('login'))
 
 
 @app.route("/login", methods=["GET", "POST"])
-def login(): #HTTP route to log in a user.
-    # Retrieving input
-    email = request.form.get('email')
-    password = request.form.get('password')
-
-
-    print(f"email:{email}, password:{password}")
+def login():
+    form = LoginForm()
+    
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+    
     try:
-        # Generating session/CSRF token and passing them to frontend
-        session_token, csrf_token = user_auth_register(email, password) # make this an await later it doesnt work rn for some reason
-        '''return jsonify({"message": "User registered successfully", 
-                        "session_token": session_token, 
-                        "csrf_token": csrf_token}), 201''' #put this back when tokens are put in
-        return render_template("Build.html")
+        # Attempt to log in the user
+        session_token, csrf_token = user_auth_login(email, password)
+        
+        # Store tokens in session
+        session['session_token'] = session_token
+        session['csrf_token'] = csrf_token
+        session['user_email'] = email
+        
+        # Redirect to build page on successful login
+        return redirect(url_for('build'))
     
+    except ValueError as e:
+        # Handle validation errors
+        return render_template("Login.html", error="Invalid email or password")
     except Exception as e:
-        print(f"Unexpected error: {str(e)}")
-        return jsonify({"error": str(e)}), 406
+        # Handle unexpected errors
+        app.logger.error(f"Login error: {str(e)}")
+        return render_template("Login.html", form=form, error="An error occurred. Please try again.")
+    
+    return render_template("Login.html", form=form)
 
     
 
-@app.route("/register", methods=["POST"])
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    pass
+    form = RegisterForm()
+    
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+    
+    try:
+        # Register the user
+        session_token, csrf_token = user_auth_register(email, password)
+        
+        # Store tokens in session
+        session['session_token'] = session_token
+        session['csrf_token'] = csrf_token
+        session['user_email'] = email
+        
+        # Redirect to build page on successful registration
+        return redirect(url_for('build'))
+    
+    except ValueError as e:
+        # Handle validation errors (email exists, weak password, etc.)
+        error_message = str(e)
+        if "already exists" in error_message.lower():
+            error_message = "Email already exists"
+        return render_template("Register.html", error=error_message)
+    except Exception as e:
+        # Handle unexpected errors
+        app.logger.error(f"Registration error: {str(e)}")
+        return render_template("Register.html", form=form, error="An error occurred. Please try again.")
+    
+    return render_template("Register.html", form=form)
+
+@app.route("/logout")
+def logout():
+    # Get tokens from session
+    session_token = session.get('session_token')
+    csrf_token = session.get('csrf_token')
+    
+    # Logout user if tokens exist
+    if session_token and csrf_token:
+        try:
+            user_auth_logout(session_token, csrf_token)
+        except:
+            pass  # Ignore errors during logout
+    
+    # Clear session
+    session.clear()
+    return redirect(url_for('login'))
 
 @app.route("/build")
 def build():
+    # Check if user is logged in
+    if 'session_token' not in session or 'csrf_token' not in session:
+        return redirect(url_for('login'))
+    
+    # Validate tokens
+    if not user_auth_validate_token(session['session_token'], session['csrf_token']):
+        session.clear()
+        return redirect(url_for('login'))
+    
     # Clear shapes when loading the build page
     clear_shapes()
     return render_template("Build.html")
 
-@app.route("/place-shape", methods=["POST"]) # Calculate and store location of placed shape
+@app.route("/place-shape", methods=["POST"])
 def place_shape():
+    # Check if user is logged in
+    if 'session_token' not in session or 'csrf_token' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    # Validate tokens
+    if not user_auth_validate_token(session['session_token'], session['csrf_token']):
+        session.clear()
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
     shape_type = data.get("type")
     side_length = data.get("size")
@@ -149,19 +221,44 @@ def place_shape():
 
 @app.route("/saves")
 def saves():
+    # Check if user is logged in
+    if 'session_token' not in session or 'csrf_token' not in session:
+        return redirect(url_for('login'))
+    
+    # Validate tokens
+    if not user_auth_validate_token(session['session_token'], session['csrf_token']):
+        session.clear()
+        return redirect(url_for('login'))
+    
     return render_template("Save.html")
 
 @app.route("/recs")
 def recs():
+    # Check if user is logged in
+    if 'session_token' not in session or 'csrf_token' not in session:
+        return redirect(url_for('login'))
+    
+    # Validate tokens
+    if not user_auth_validate_token(session['session_token'], session['csrf_token']):
+        session.clear()
+        return redirect(url_for('login'))
+    
     return render_template("Recs.html")
 
 @app.route("/blackjack")
 def blackjack():
+    # Check if user is logged in
+    if 'session_token' not in session or 'csrf_token' not in session:
+        return redirect(url_for('login'))
+    
+    # Validate tokens
+    if not user_auth_validate_token(session['session_token'], session['csrf_token']):
+        session.clear()
+        return redirect(url_for('login'))
+    
     return render_template("Blackjack.html")
 
 if __name__ == "__main__":
-    app.run(debug=True,port=5000)
-
     with app.app_context():
         db.create_all()
-        app.run()
+    app.run(debug=True, port=5000)
