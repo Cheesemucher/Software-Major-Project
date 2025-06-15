@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
   
-        // response.ok (2xx)
+        // Check for response status
         if (data && data.success) {
           // Registration succeeded
           if (messageDiv) {

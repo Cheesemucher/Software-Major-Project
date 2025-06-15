@@ -19,3 +19,11 @@ class User(db.Model): # Message for the teach: Followed a tutorial, if something
 
     def check_password(self, plain_password: str) -> bool:
         return check_password_hash(self.password_hash, plain_password)
+    
+# Helper functions for querying database:
+def lookup_user_by_email(email):
+    if not email:
+        return None # Return none if email is not found in the database
+    
+    normalized_email = email.strip().lower()
+    return User.query.filter_by(email=normalized_email).first()

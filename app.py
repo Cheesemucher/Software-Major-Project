@@ -4,7 +4,7 @@ import traceback # Temorary debugging exception message tool, not necessary for 
 import secrets
 import re
 #import hashlib using werkzeug instead as an experiemnt
-from data import db, User, migrate
+from data import db, User, migrate, lookup_user_by_email
 from utils.shapes import (
     get_square_centre, get_triangle_centre,
     get_square_edge_positions, get_triangle_edge_positions,
@@ -68,8 +68,6 @@ def register():
         return render_template('Register.html')
 
     # POST: handle registration. Expect JSON or fallback to form data.
-    EMAIL_REGEX = re.compile(r"^[^@]+@[^@]+\.[^@]+$") # Abstract this validation stuff later
-    
     try:
         # Parse JSON or form data
         if request.is_json:
@@ -123,28 +121,42 @@ def login():
         return render_template('Login.html')
 
     # POST
-    if request.is_json:
-        data = request.get_json()
-        email = data.get('email', '').strip()
-        password = data.get('password', '')
-    else:
-        # fallback for form-encoded if JS fails or if someone POSTs directly
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
+    try:
+        if request.is_json:
+            data = request.get_json()
+            email = data.get('email', '').strip()
+            password = data.get('password', '')
+            print(email, password) # For debugging, make sure it makes it to the Flask
+        else:
+            # fallback for form-encoded if JS fails or if someone POSTs directly
+            email = request.form.get('email', '').strip()
+            password = request.form.get('password', '')
+            print("fallback") 
 
-    if not email or not password:
-        return jsonify({'success': False, 'message': 'Email and password required.'}), 400
+        if not email or not password:
+            return jsonify({'success': False, 'message': 'Email and password required.'}), 400
 
-    # Authenticate inputs here 
-    #user = lookup_user_by_email(email)
-    #if user is None or not verify_password(password, user.password_hash):
-    #    return jsonify({'success': False, 'message': 'Invalid credentials.'}), 401
 
-    # Success
-    #session.clear()
-    #session['user_id'] = user.id
-    #next_url = url_for('build')  # or dynamic
-    #return jsonify({'success': True, 'next_url': next_url}), 200
+        user = lookup_user_by_email(email)
+
+        if not user:
+            return jsonify({'success': False, 'message': 'User not found.'}), 401
+        
+        elif not user.check_password(password):
+            return jsonify({'success': False, 'message': 'Invalid credentials.'}), 401
+
+        # Establish session on success
+        session.clear()
+        session['user_id'] = user.id
+
+        next_url = url_for('build')  # Send them on their way
+        return jsonify({'success': True, 'next_url': next_url}), 200
+
+    except Exception as e:
+        # Log exception for debugging only, remove for 'production' to not expose sensitive details in error messages
+        app.logger.exception("Unhandled exception in /login")
+        return jsonify({'success': False, 'message': 'Server error. Please try again.'}), 500
+
 
 @app.route("/build")
 def build():

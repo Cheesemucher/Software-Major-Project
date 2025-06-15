@@ -48,19 +48,24 @@ document.addEventListener('DOMContentLoaded', () => {
   
         // Parse JSON response
         const data = await response.json();
+        console.log(data)
   
         if (data.success) {
           // Login succeeded. You might redirect or update UI.
           messageDiv.textContent = 'Login successful! Redirecting...';
-          // e.g.: window.location.href = '/dashboard';
-        } else {
-          // Backend indicates failure
+          window.location.href = data.next_url;
+        } 
+        else {
+          // Backend indicates invalid login session
           messageDiv.textContent = data.message || 'Login failed';
         }
-      } catch (err) {
+      } 
+      
+       catch (err) {
         console.error('Fetch error:', err);
         messageDiv.textContent = 'Network or server error. Please try again.';
       }
+      
     });
   });
   
