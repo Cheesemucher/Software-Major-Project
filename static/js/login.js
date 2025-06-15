@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
     form.addEventListener('submit', async (event) => {
-      event.preventDefault();  // stop default form submission
+      event.preventDefault();  // stop default form submission to use a JS fetch instead
 
       // Collect input values
       const email = document.getElementById('email').value.trim();
@@ -38,33 +38,47 @@ document.addEventListener('DOMContentLoaded', () => {
           credentials: 'include',  // for cookies
         });
   
-        if (!response.ok) {
-          // HTTP-level error (e.g. 400, 401, 500)
-          const errorData = await response.json().catch(() => null);
-          const errMsg = (errorData && errorData.message) || `Error: ${response.status}`;
-          messageDiv.textContent = errMsg;
-          return;
-        }
-  
         // Parse JSON response
-        const data = await response.json();
-        console.log(data)
-  
-        if (data.success) {
-          // Login succeeded. You might redirect or update UI.
-          messageDiv.textContent = 'Login successful! Redirecting...';
-          window.location.href = data.next_url;
+        try {
+            data = await response.json();
+          } catch (parseErr) {
+            console.warn('Could not parse JSON:', parseErr);
+          }
+
+        if (!response.ok) {
+            // HTTP level error
+            const msg = data && data.message ? data.message : `Error: ${response.status}`;
+            if (messageDiv) {
+              messageDiv.className = 'message-box error';
+              messageDiv.textContent = msg;
+            }
+            return;
+          }
+
+        if (data && data.success) {
+            if (messageDiv) {
+              messageDiv.className = 'message-box success';
+              messageDiv.textContent = 'Login successful! Redirecting...';
+            }
+            // redirect
+            window.location.href = data.next_url;
+          } 
+          else {
+            // response was 2xx but JSON indicates failure or missing fields
+            const msg = data && data.message ? data.message : 'Login failed';
+            if (messageDiv) {
+              messageDiv.className = 'message-box error';
+              messageDiv.textContent = msg;
+            }
+          }
         } 
-        else {
-          // Backend indicates invalid login session
-          messageDiv.textContent = data.message || 'Login failed';
+        catch (err) {
+          console.error('Fetch error:', err);
+          if (messageDiv) {
+            messageDiv.className = 'message-box error';
+            messageDiv.textContent = 'Network or server error. Please try again.';
+          }
         }
-      } 
-      
-       catch (err) {
-        console.error('Fetch error:', err);
-        messageDiv.textContent = 'Network or server error. Please try again.';
-      }
       
     });
   });

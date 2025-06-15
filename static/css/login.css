@@ -1,90 +1,132 @@
 /* Login page styling */
 body {
-    background: var(--primary-bg);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
-  }
-  
-  /* Title container */
-  .construct-title {
-    margin-bottom: 40px;
-    font-size: 64px;
-    font-weight: bold;
-    font-family: 'Share Tech Mono', monospace;
-    text-align: center;
-    text-shadow: 2px 2px 10px #000;
-    letter-spacing: 4px;
-  }
-  
-  /* Left part of title */
-  .title-left {
-    color: #ce4125; /* Rust logo color */
-  }
-  
-  /* Right part of title */
-  .title-right {
-    color: white;
-  }
-  
-  .login-container {
-    width: 100%;
-    max-width: 400px;
-    background: var(--secondary-bg);
-    padding: 40px;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    box-sizing: border-box;
-  }
-  
-  .login-container h2 {
-    margin-bottom: 20px;
-    font-size: 24px;
-    color: var(--text-color);
-  }
-  
-  .login-container label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: bold;
-    color: var(--text-color);
-    text-align: left;
-  }
-  
-  .login-container input[type="text"],
-  .login-container input[type="password"] {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 16px;
-    background: #333;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    color: white;
-    font-size: 14px;
-    box-sizing: border-box;
-  }
-  
-  .login-container input:focus {
-    outline: none;
-    border-color: var(--accent-color);
-  }
-  
-  .login-btn {
-    width: 100%;
-    padding: 10px;
-    background: var(--accent-color);
-    color: white;
-    border: none;
-    font-size: 16px;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .login-btn:hover {
-    background: #8a3a2f;
-  }
-  
+  background: var(--primary-bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Title container */
+.construct-title {
+  margin-bottom: 40px;
+  font-size: 64px;
+  font-weight: bold;
+  font-family: 'Share Tech Mono', monospace;
+  text-align: center;
+  text-shadow: 2px 2px 10px #000;
+  letter-spacing: 4px;
+}
+
+/* Left part of title */
+.title-left {
+  color: #ce4125; /* Rust logo color or your accent */
+}
+
+/* Right part of title */
+.title-right {
+  color: white;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  background: var(--secondary-bg);
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+}
+
+/* Heading */
+.login-container h2 {
+  margin-bottom: 20px;
+  font-size: 24px;
+  color: var(--text-color);
+}
+
+/* Message box styling */
+.message-box {
+  margin-bottom: 20px;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  display: none; /* hidden by default; shown when JS inserts text */
+}
+
+/* When showing an error, add class "error" */
+.message-box.error {
+  display: block;
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid #ff4d4d;
+  color: #ffdddd;
+}
+
+/* When showing success message, add class "success" */
+.message-box.success {
+  display: block;
+  background: rgba(0, 255, 0, 0.1);
+  border: 1px solid #4dff4d;
+  color: #ddffdd;
+}
+
+.login-container label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: bold;
+  color: var(--text-color);
+  text-align: left;
+}
+
+.login-container input[type="text"],
+.login-container input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 16px;
+  background: #333;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: white;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.login-container input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.login-btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  font-size: 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.login-btn:hover {
+  background: #8a3a2f;
+}
+
+/* Register link styling */
+.register-link {
+  margin-top: 18px;
+  text-align: left;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.register-link a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}

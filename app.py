@@ -126,12 +126,11 @@ def login():
             data = request.get_json()
             email = data.get('email', '').strip()
             password = data.get('password', '')
-            print(email, password) # For debugging, make sure it makes it to the Flask
         else:
             # fallback for form-encoded if JS fails or if someone POSTs directly
             email = request.form.get('email', '').strip()
             password = request.form.get('password', '')
-            print("fallback") 
+            print("fallback used") 
 
         if not email or not password:
             return jsonify({'success': False, 'message': 'Email and password required.'}), 400

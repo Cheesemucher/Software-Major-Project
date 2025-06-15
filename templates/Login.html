@@ -11,28 +11,35 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
 </head>
 
-
 <body>
 
   <!-- Title at top -->
   <div class="construct-title">
-    <span class="title-left">Re</span><span class="title-right">Struct</span><span class="title-left">ure</span> <!--Find a nice name I got tired of the old one-->
+    <span class="title-left">Re</span><span class="title-right">Struct</span><span class="title-left">ure</span>
   </div>
+
   <!-- Login form container -->
   <div class="login-container">
+    <!-- Placeholder space for system messages -->
+    <div id="message" class="message-box" aria-live="polite"></div>
+
     <h2>Login</h2>
+
     <form id="login-form" method="POST" action="/login">
       <label for="email">Email</label>
       <input type="text" id="email" name="email" required>
-    
+
       <label for="password">Password</label>
       <input type="password" id="password" name="password" required>
-    
+
       <button type="submit" class="login-btn">Login</button>
     </form>
 
-  <!-- Placeholder for messages -->
-  <div id="message"></div>
+    <!-- Link to register page -->
+    <p class="register-link">
+      Don’t have an account? <a href="{{ url_for('register') }}">Register here</a>
+    </p>
+  </div>
 
   <script src="{{ url_for('static', filename='js/login.js') }}"></script>
 
