@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register</title>
+  <!-- Your CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/register.css') }}">
+</head>
+<body>
+  <div class="construct-title">
+    <span class="title-left">Con</span><span class="title-right">struct</span><span class="title-left">ion Website</span>
+  </div>
+  <div class="login-container">
+    <h2>Register</h2>
+    <!-- The form has id="register-form" so JS can intercept -->
+    <form id="register-form" method="POST" action="/register">
+      <label for="email">Email</label>
+      <!-- id="email" matches JS; name="email" is fallback for form-encoded -->
+      <input type="email" id="email" name="email" required>
+
+      <label for="password">Password</label>
+      <!-- id="password" matches JS; name="password" is fallback -->
+      <input type="password" id="password" name="password" required>
+
+      <label for="password-confirm">Confirm Password</label>
+      <input type="password" id="password-confirm" name="password_confirm" required>
+
+      <button type="submit" class="register-btn">Register</button>
+    </form>
+
+    <!-- Placeholder for status messages (errors or success) -->
+    <div id="message" style="margin-top:1em; color: red;"></div>
+  </div>
+
+  <!-- Include register.js from static folder -->
+  <script src="{{ url_for('static', filename='js/register.js') }}"></script>
+</body>
+</html>

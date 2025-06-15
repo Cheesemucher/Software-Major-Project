@@ -23,7 +23,7 @@
     <h2>Login</h2>
     <form method="POST" action="/login">
       <label for="email">Email</label>
-      <input type="text" id="username" name="email" required>
+      <input type="text" id="email" name="email" required>
 
       <label for="password">Password</label>
       <input type="password" id="password" name="password" required>
@@ -31,6 +31,11 @@
       <button type="submit" class="login-btn">Login</button>
     </form>
   </div>
+
+  <!-- Placeholder for messages -->
+  <div id="message"></div>
+
+  <script src="{{ url_for('static', filename='js/login.js') }}"></script>
 
 </body>
 </html>
