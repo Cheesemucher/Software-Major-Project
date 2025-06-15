@@ -1,14 +1,37 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
-import math
+from flask_sqlalchemy import SQLAlchemy
 import secrets
+import hashlib
 from utils.shapes import (
     get_square_centre, get_triangle_centre,
     get_square_edge_positions, get_triangle_edge_positions,
     check_overlap, TILE_SIDE_LENGTH
 )
+from data import User
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(16)  # For session management
+app.config["SECRET_KEY"] = secrets.token_hex(16)  # For session management
+app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///users.db'
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+#Temporary puttingthis here to see ifthe code works.
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    id = db.Column(db.integer, primary_key=True)
+    email = db.Column(db.String(200), nullable = False)
+    password = db.Column(db.String(200), nullable = False)
+
+    def __init__(self, email, password):
+        self.email = email
+        self.password = self.__hash_password(password)
+
+    def __hash_password(password):
+        return hashlib.sha256(password.encode('ascii')).hexdigest()
+
+    def __check_password(self,password):
+        return hashlib.sha256(password.encode('ascii')).hexdigest() == self.password
+    
 
 # Store placed shapes in session (in production, use a database)
 def get_placed_shapes():
@@ -41,7 +64,11 @@ def home():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST": # Temporary login functionality to get past the login page
-        return render_template("Build.html")
+        form = request.form
+        new_user = User(form.email, form.password)
+        db.session.add(new_user)
+        db.session.commit()
+        return "Registered yippee"
 
     return render_template("Login.html")
 
