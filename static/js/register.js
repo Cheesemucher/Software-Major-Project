@@ -13,27 +13,35 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
   
-      // Grab input elements
+      // Get input elements
       const emailEl = document.getElementById('email');
       const passwordEl = document.getElementById('password');
       const confirmEl = document.getElementById('password-confirm');
   
-      const email = emailEl ? emailEl.value.trim() : ''; // WTF this does? I still don't know but the guy told me to put it in so might as well for now
+      const email = emailEl ? emailEl.value.trim() : '';
       const password = passwordEl ? passwordEl.value : '';
       const passwordConfirm = confirmEl ? confirmEl.value : '';
   
       // Basic client-side validation
       if (!email || !password || !passwordConfirm) {
-        if (messageDiv) messageDiv.textContent = 'Please fill in all fields.';
+        if (messageDiv) {
+          messageDiv.className = 'message-box error';
+          messageDiv.textContent = 'Please fill in all fields.';
+        }
         return;
       }
       if (password !== passwordConfirm) {
-        if (messageDiv) messageDiv.textContent = 'Passwords do not match.';
+        if (messageDiv) {
+          messageDiv.className = 'message-box error';
+          messageDiv.textContent = 'Passwords do not match.';
+        }
         return;
       }
-      // Optionally: enforce password strength (length, complexity)
-      if (password.length < 6) {
-        if (messageDiv) messageDiv.textContent = 'Password should be at least 6 characters.';
+      if (password.length < 8) {
+        if (messageDiv) {
+          messageDiv.className = 'message-box error';
+          messageDiv.textContent = 'Password should be at least 8 characters.';
+        }
         return;
       }
   
@@ -47,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'Content-Type': 'application/json',
             // 'X-CSRFToken': csrfToken, 
           },
-          credentials: 'include', // if your app uses cookies/sessions after register
+          credentials: 'include',
           body: JSON.stringify(payload),
         });
   
@@ -59,37 +67,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
   
         if (!response.ok) {
-          // e.g. 400 for validation error, 409 for conflict, etc.
+          // HTML errors
           const errMsg = data && data.message ? data.message : `Error: ${response.status}`;
-          if (messageDiv) messageDiv.textContent = errMsg;
+          if (messageDiv) {
+            messageDiv.className = 'message-box error';
+            messageDiv.textContent = errMsg;
+          }
           return;
         }
   
-        // Check for response status
+        // response.ok is true
         if (data && data.success) {
           // Registration succeeded
           if (messageDiv) {
-            messageDiv.style.color = 'green';
+            messageDiv.className = 'message-box success';
             messageDiv.textContent = 'Registration successful! Redirecting to login...';
           }
-          // Redirect after short delay, or immediately
           const redirectUrl = data.next_url || '/login';
           setTimeout(() => {
             window.location.href = redirectUrl;
           }, 1000);
         } else {
-          // Backend returned JSON but indicated failure
+          // Backend JSON indicates failure
           const msg = data && data.message ? data.message : 'Registration failed.';
           if (messageDiv) {
-            messageDiv.style.color = 'red';
+            messageDiv.className = 'message-box error';
             messageDiv.textContent = msg;
           }
         }
       } catch (err) {
         console.error('Fetch error during register:', err);
         if (messageDiv) {
-          messageDiv.style.color = 'red';
-          messageDiv.textContent = 'Network or server error.';
+          messageDiv.className = 'message-box error';
+          messageDiv.textContent = 'Network or server error. Please try again.';
         }
       }
     });

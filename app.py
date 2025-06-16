@@ -34,6 +34,17 @@ with app.app_context():
 
 # + Bonus: Look into adding/using Flask blueprints
 
+
+# Regex pattern to validate plaintext inputs
+PATTERN = re.compile(r'^[a-zA-Z0-9_]+$')
+
+# Regex pattern to validate email
+EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9_]+@+.')
+
+# Regex pattern to validate password
+PASSWORD_PATTERN = re.compile(r'^[a-zA-Z0-9_]')
+
+
 # Store placed shapes in session (use a database later on)
 def get_placed_shapes():
     if 'placed_shapes' not in session:
@@ -81,9 +92,23 @@ def register():
             email = request.form.get('email', '').strip()
             password = request.form.get('password', '')
 
-        # Basic validation
+        # Input sanitisation
+        email = re.escape(email)
+        password = re.escape(password)
+
+        # Input validation
         if not email or not password:
             return jsonify({'success': False, 'message': 'Email and password are required.'}), 400
+        if len(email) > 255:
+            return jsonify({'success': False, 'message': 'Email cannot have over 255 characters'}), 400
+        if len(password) < 8:
+            return jsonify({'success': False, 'message': 'Password should have at least 8 characters'}), 400
+        if password == password.lower() or password == password.upper():
+            return jsonify({'success': False, 'message': 'Password must contain at least 1 uppercase and 1 lowercase letter'}), 400
+        if not PASSWORD_PATTERN.match(password):
+            return jsonify({'success': False,'message': 'Invalid password format.'}), 400
+        if not EMAIL_PATTERN.match(email):
+            return jsonify({'success': False, 'message': 'Invalid email format.'}), 400
 
         # Check existing
         existing = User.query.filter_by(email=email).first()
@@ -132,8 +157,21 @@ def login():
             password = request.form.get('password', '')
             print("fallback used") 
 
+        # Input sanitisation
+        email = re.escape(email)
+        password = re.escape(password)
+
+        # Input validation
         if not email or not password:
-            return jsonify({'success': False, 'message': 'Email and password required.'}), 400
+            return jsonify({'success': False, 'message': 'Email and password are required.'}), 400
+        if len(email) > 255:
+            return jsonify({'success': False, 'message': 'Email cannot have over 255 characters'}), 400
+        if len(password) > 255:
+            return jsonify({'success': False, 'message': 'Password cannot have over 255 characters'}), 400
+        if not PASSWORD_PATTERN.match(password):
+            return jsonify({'success': False,'message': 'Invalid password format.'}), 400
+        if not EMAIL_PATTERN.match(email):
+            return jsonify({'success': False, 'message': 'Invalid email format.'}), 400
 
 
         user = lookup_user_by_email(email)
