@@ -53,12 +53,13 @@ def get_square_edge_positions(centre, rotation):
 
 
 def get_triangle_edge_positions(centre, rotation):
-    """Get plus button positions for triangle edges (excluding base)"""
+    #Get plus button positions for triangle edges (excluding base)
     height = math.sqrt(3)/2 * TILE_SIDE_LENGTH
     rotation_rad = rotation * math.pi / 180
     base_angle = rotation_rad + math.pi
     
     edges = [
+        {"angle": base_angle},                # Base edge
         {"angle": base_angle + math.pi*2/3},  # Left edge
         {"angle": base_angle - math.pi*2/3}   # Right edge
     ]
