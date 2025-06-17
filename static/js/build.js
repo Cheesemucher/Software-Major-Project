@@ -229,12 +229,15 @@ function removePlusButton(buttonInfo) {
 }
 
 function compareButtonInfo(buttonInfo) {
+  // Define bounds for roughly where the 'identical' plus button could be
+  const BOUNDS = TILE_SIDE_LENGTH / 3;
+
   // Checks for info as the data stored in the list is by arrays of each button's coordinates yet doesn't directly match identical arrays as JS checks where the data is stored and not what the values in the arrays
   const id = activePlusButtons.findIndex(item =>
-    item.x === buttonInfo.x &&
-    item.y === buttonInfo.y
+    Math.abs(item.x - buttonInfo.x) <= BOUNDS && // Thankfully my Y11 level maths knowledge works in JS
+    Math.abs(item.y - buttonInfo.y) <= BOUNDS
     // Don't check for a matching rotation here as we don't want overlapping button positions no matter the orientation
-    );
+  );
 
   return {
     found: id !== -1, // Return whether the index is -1
