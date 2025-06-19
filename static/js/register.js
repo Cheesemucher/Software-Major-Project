@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!messageDiv) {
       console.warn("register.js: #message div not found; feedback won't show");
     }
+
+    
   
     form.addEventListener('submit', async (event) => {
       event.preventDefault();

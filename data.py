@@ -17,6 +17,8 @@ class User(db.Model): # Message for the teach: Followed a tutorial, if something
         # Use werkzeug.security to hash
         self.password_hash = generate_password_hash(plain_password, method='pbkdf2:sha256')
 
+        
+
     def check_password(self, plain_password: str) -> bool:
         return check_password_hash(self.password_hash, plain_password)
     
