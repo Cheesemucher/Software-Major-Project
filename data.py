@@ -6,7 +6,7 @@ from flask_migrate import Migrate
 db = SQLAlchemy()
 migrate = Migrate() # For database migration (idk what it is but it looked cool)
 
-class User(db.Model): # Message for the teach: Followed a tutorial, if something is strange lmk
+class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
@@ -29,3 +29,4 @@ def lookup_user_by_email(email):
     
     normalized_email = email.strip().lower()
     return User.query.filter_by(email=normalized_email).first()
+    
