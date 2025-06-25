@@ -12,15 +12,17 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
 
+    # Relationship to Build
+    builds = db.relationship('Build', backref='user', lazy=True, cascade='all, delete-orphan')
+
 
     def set_password(self, plain_password: str):
         # Use werkzeug.security to hash
         self.password_hash = generate_password_hash(plain_password, method='pbkdf2:sha256')
 
-        
-
     def check_password(self, plain_password: str) -> bool:
         return check_password_hash(self.password_hash, plain_password)
+    
     
 # Helper functions for querying database:
 def lookup_user_by_email(email):
@@ -30,3 +32,13 @@ def lookup_user_by_email(email):
     normalized_email = email.strip().lower()
     return User.query.filter_by(email=normalized_email).first()
     
+
+# Stored builds database
+
+class Build(db.Model):
+    __tablename__ = 'builds'
+    id = db.Column(db.Integer, primary_key=True)
+    build_name = db.Column(db.String(255), nullable=False)
+    generation_data = db.Column(db.Text, nullable=False)
+    linked_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
