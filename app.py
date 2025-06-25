@@ -204,7 +204,7 @@ def build():
     generation_data = {}
 
     if user_id and build_id:
-        build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first()
+        build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first() # Ensure the current user owns the build when querying to enforce security as build ID is currently quite vulnerable. With proper session management however, this poses no safety concern
         if build:
             try:
                 generation_data = json.loads(build.generation_data)
@@ -304,7 +304,31 @@ def place_shape():
 
 @app.route("/saves")
 def saves():
-    return render_template("Save.html")
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    builds = Build.query.filter_by(linked_user_id=user_id).all()
+    return render_template("Save.html", user_builds=builds)
+
+@app.route("/rename-build/<int:build_id>", methods=["POST"]) # Rename a build functionality
+def rename_build(build_id):
+    user_id = session.get("user_id")
+    data = request.get_json()
+    new_name = data.get("name", "").strip()
+
+    if not user_id or not new_name:
+        return jsonify({"success": False, "message": "Invalid request"}), 400
+
+    build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first()
+    if not build:
+        return jsonify({"success": False, "message": "Build not found"}), 404
+
+    build.build_name = new_name
+    db.session.commit()
+    return jsonify({"success": True})
+
+
 
 @app.route("/recs")
 def recs():

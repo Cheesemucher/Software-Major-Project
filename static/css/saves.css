@@ -60,3 +60,11 @@
     justify-content: center;
   }
   
+  .inline-edit {
+    width: 100%;
+    font-size: 16px;
+    padding: 2px 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
