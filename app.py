@@ -3,8 +3,9 @@ from flask_sqlalchemy import SQLAlchemy
 import traceback # Temorary debugging exception message tool, not necessary for actual functionality
 import secrets
 import re
+import json
 #import hashlib using werkzeug instead as an experiemnt
-from data import db, User, migrate, lookup_user_by_email
+from data import db, User, migrate, lookup_user_by_email, Build
 from utils.shapes import (
     get_square_centre, get_triangle_centre,
     get_square_edge_positions, get_triangle_edge_positions,
@@ -20,7 +21,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 #migrate.init_app(app, db)
 
-# Create tables if they don't exist (development use only)
+# Create tables if they don't exist (development use only - poses security risks by printing this information)
 with app.app_context():
     db.create_all()
 
@@ -63,7 +64,7 @@ def check_shape_overlap(new_shape, existing_shapes): # Need to adjust this upon 
     """Check if a new shape would overlap with any existing shapes"""
     for shape in existing_shapes:
         if check_overlap(new_shape, shape):
-            return False # Turned this off for testing it was annoying, this line should "return True"
+            return False # Should be set to true to prevent overlap, disabled for testing purposes
     return False 
 
 
@@ -195,11 +196,44 @@ def login():
         return jsonify({'success': False, 'message': 'Server error. Please try again.'}), 500
 
 
-@app.route("/build")
+@app.route("/build", methods=["GET"])
 def build():
-    # Clear shapes when loading the build page
-    clear_shapes()
-    return render_template("Build.html")
+    user_id = session.get("user_id")
+    build_id = request.args.get("id")
+
+    generation_data = {}
+
+    if user_id and build_id:
+        build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first()
+        if build:
+            try:
+                generation_data = json.loads(build.generation_data)
+            except Exception:
+                generation_data = {}
+
+    return render_template("Build.html", generation_data=generation_data) # Send the requested build to load to the frontend. TODO Encrypt TS bruh (encryption should lowkey go into the build class in data.py though)
+
+@app.route("/save-build", methods=["POST"])
+def save_build():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "message": "Not logged in."}), 403
+
+    try:
+        data = request.get_json()
+        build_name = data.get("build_name", "Untitled Build")
+        generation_data = json.dumps(data.get("generation_data", {})) # Convert dictionary data to JSON string for storage
+
+        new_build = Build(build_name=build_name, generation_data=generation_data, linked_user_id=user_id)
+        db.session.add(new_build)
+        db.session.commit()
+
+        return jsonify({"success": True, "build_id": new_build.id}), 200
+
+    except Exception as e:
+        print("Error saving build:", e)
+        return jsonify({"success": False, "message": "Failed to save build."}), 500
+
 
 @app.route("/place-shape", methods=["POST"]) # Calculate and store location of placed shape
 def place_shape():
@@ -238,7 +272,7 @@ def place_shape():
             "plus_points": []
         })
     
-    # Add the shape to our tracking
+    # Add the shape to the build session tracking array -> Make this permanantly stored in a database later
     add_placed_shape(new_shape)
     
     # Filter plus signs - remove any that would cause overlaps
@@ -258,14 +292,12 @@ def place_shape():
         
         if not square_overlaps or not triangle_overlaps:
             filtered_plus_signs.append(plus_sign)
+
+    print("Shapes to be placed:", new_shape)
+    print("Buttons to be placed:", filtered_plus_signs)
     
     return jsonify({
-        "placed": [{
-            "x": centre["x"], 
-            "y": centre["y"], 
-            "type": shape_type, 
-            "rotation": rotation
-        }],
+        "placed": [new_shape],
         "plus_points": filtered_plus_signs
     })
 

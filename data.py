@@ -42,3 +42,5 @@ class Build(db.Model):
     generation_data = db.Column(db.Text, nullable=False)
     linked_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
+    def set_build_name(self, name: str):
+        self.build_name = name

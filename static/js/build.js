@@ -43,14 +43,14 @@ let currentPlacementPoint = {
   rotation: 0
 };
 
-let selectedPlus = document.getElementById("initial-plus-wrapper");
+let selectedPlus = null;
 
 // Tile placement stuff
 function toggleMenu(e) {
   if (e) e.stopPropagation(); // prevent click from bubbling to body
   const menu = document.getElementById("centerMenu");
   menu.classList.toggle("hidden");
-  
+
   // Position menu near the clicked plus button
   if (e && e.target) {
     const rect = e.target.getBoundingClientRect();
@@ -64,7 +64,7 @@ function toggleMenu(e) {
 document.addEventListener("click", function (event) {
   const menu = document.getElementById("centerMenu");
   const plusButtons = document.querySelectorAll(".plus-button");
-  
+
   // Check if click is on any plus button
   let clickedOnPlus = false;
   plusButtons.forEach(btn => {
@@ -84,45 +84,19 @@ window.addEventListener('DOMContentLoaded', function() {
     const rect = gridContainer.getBoundingClientRect();
     currentPlacementPoint.x = rect.left + rect.width / 2;
     currentPlacementPoint.y = rect.top + rect.height / 2;
-    
-    // Also update the initial plus button position
-    const initialPlusWrapper = document.getElementById('initial-plus-wrapper');
-    if (initialPlusWrapper) {
-      initialPlusWrapper.style.left = '50%';
-      initialPlusWrapper.style.top = '50%';
-    }
   }
 });
-  
+
 let activePlusButtons = [];
 
 // Called when user clicks a tile type in the popup menu
 function placeFromMenu(shapeType) {
-    
-    // For the initial placement, use the actual position of the initial plus button
-    const initialPlus = document.getElementById("initial-plus-wrapper");
-    if (initialPlus) {
-      const plusButton = initialPlus.querySelector('.plus-button');
-      const rect = plusButton.getBoundingClientRect();
-      const grid = document.getElementById('grid');
-      const gridRect = grid.getBoundingClientRect();
-      
-      // Convert to grid-relative coordinates
-      currentPlacementPoint = {
-        x: rect.left + rect.width/2 - gridRect.left,
-        y: rect.top + rect.height/2 - gridRect.top,
-        rotation: 0
-      };
-    }
-
-    requestTilePlacement(shapeType, TILE_SIDE_LENGTH, currentPlacementPoint); // Current placement point information is currently stored as a public variable and not really passed through this function as I am not sure how to pass the position info from the clicked plus button to the HTML that defines the menu then back when the placeFromMenu function is called on click
-  }
-  
+  requestTilePlacement(shapeType, TILE_SIDE_LENGTH, currentPlacementPoint);
+}
 
 // Sends shape placement request to Flask
 function requestTilePlacement(type, size, originNrotation) {
-      
-    fetch('/place-shape', {
+  fetch('/place-shape', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -144,7 +118,7 @@ function requestTilePlacement(type, size, originNrotation) {
       }
       return;
     }
-    
+
     // Handle tile placing
     data.placed.forEach(tile => {
       renderTile(tile.x, tile.y, tile.type, tile.rotation);
@@ -153,33 +127,57 @@ function requestTilePlacement(type, size, originNrotation) {
 
     // Handle Plus button generation
     data.plus_points.forEach(p => {
-      // each p should be in the form { x: Number, y: Number, rotation: Number }
       addButton(p, p.x, p.y, p.rotation)
     });
 
     // Get rid of all the existing buttons before redrawing them
     removeAllPlusButtons()
-    removePlusButton(selectedPlus) // Selected plus is also a public variable that is set to a particular plus upon click
+    removePlusButton(selectedPlus)
 
     activePlusButtons.forEach(button => {
       drawPlusButtonAt(button.x, button.y, button.rotation);
     });
 
-    // Remove initial plus button and hide menu after first shape placement
-    const initialPlus = document.getElementById("initial-plus-wrapper");
-    if (initialPlus) {
-    initialPlus.remove();
-    }
+    // Hide menu after first shape placement
     const menu = document.getElementById("centerMenu");
     if (menu) {
-    menu.classList.add("hidden");
+      menu.classList.add("hidden");
     }
   });
 }
 
+
+function renderBuild() {
+  const shapes = generation_data.shapes || [];
+  let plus_buttons = generation_data.plus_buttons || []; // TODO: Make the default plus button array the single initial plus button
+
+  // If build is completely empty, generate default center + button
+  if (shapes.length === 0 && plus_buttons.length === 0) {
+    const grid = document.getElementById('grid');
+    const gridRect = grid.getBoundingClientRect();
+    const centerX = gridRect.width / 2;
+    const centerY = gridRect.height / 2;
+    plus_buttons = [{ x: centerX, y: centerY, rotation: 0 }];
+  }
+
+  // Render shapes
+  shapes.forEach(shape => {
+    renderTile(shape.x, shape.y, shape.type, shape.rotation);
+    placedShapes.push(shape);
+  });
+
+  // Render plus buttons
+  plus_buttons.forEach(btn => {
+    drawPlusButtonAt(btn.x, btn.y, btn.rotation);
+    activePlusButtons.push(btn);
+  });
+}
+
+
+
 function addButton(button,x,y,rotation) {
   buttonInfo = {x, y, rotation}
-  const { found, index } = compareButtonInfo(buttonInfo); // Check if each new button to add it already in the list
+  const { found, index } = compareButtonInfo(buttonInfo); // Check if each new button to add is already in the list
 
   if (found) {
     activePlusButtons.splice(index, 1); // Remove it if found
@@ -192,7 +190,6 @@ function addButton(button,x,y,rotation) {
 
 // Draw red + sign at given location with rotation
 function drawPlusButtonAt(x, y, rotation) {
-
   const plus = document.createElement("div");
   plus.className = "plus-button";
   plus.textContent = "+";
@@ -201,13 +198,12 @@ function drawPlusButtonAt(x, y, rotation) {
   plus.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
 
   plus.onclick = (e) => { 
-    currentPlacementPoint = { x, y, rotation }; // Move the current placement location to the plus button upon being clicked
+    currentPlacementPoint = { x, y, rotation };
     toggleMenu(e);
     selectedPlus = {x, y, rotation}
   };
 
   document.getElementById("grid").appendChild(plus);
-  //activePlusButtons.push(plus); // Changed the place where buttons are added to the list into the requestTilePlacement function
 }
 
 // Remove all + buttons before placing new ones
@@ -219,7 +215,6 @@ function removeAllPlusButtons() {
 function removePlusButton(buttonInfo) {
   console.log("removed button", buttonInfo);
 
-  // Found is a boolean and index is the location of the item if found or '-1' if not found
   const { found, index } = compareButtonInfo(buttonInfo);
 
   if (found) {
@@ -229,18 +224,15 @@ function removePlusButton(buttonInfo) {
 }
 
 function compareButtonInfo(buttonInfo) {
-  // Define bounds for roughly where the 'identical' plus button could be
   const BOUNDS = TILE_SIDE_LENGTH / 3;
 
-  // Checks for info as the data stored in the list is by arrays of each button's coordinates yet doesn't directly match identical arrays as JS checks where the data is stored and not what the values in the arrays
   const id = activePlusButtons.findIndex(item =>
-    Math.abs(item.x - buttonInfo.x) <= BOUNDS && // Thankfully my Y11 level maths knowledge works in JS
+    Math.abs(item.x - buttonInfo.x) <= BOUNDS &&
     Math.abs(item.y - buttonInfo.y) <= BOUNDS
-    // Don't check for a matching rotation here as we don't want overlapping button positions no matter the orientation
   );
 
   return {
-    found: id !== -1, // Return whether the index is -1
+    found: id !== -1,
     index: id
   };
 }
@@ -264,17 +256,46 @@ function renderTile(x, y, type, rotation) {
   }
 
   if (type === "triangle") {
-    // CSS triangles need special positioning due to border-based rendering
     const height = Math.sqrt(3)/2 * TILE_SIDE_LENGTH;
-    const centroidFromTop = (2 * height) / 3;  // Distance from top of triangle to centroid
-    
-    // Position so the centroid is at (x, y)
+    const centroidFromTop = (2 * height) / 3;
+
     tile.style.transform = `translate(-50%, -${centroidFromTop}px) rotate(${rotation}deg)`;
     tile.style.transformOrigin = `50% ${centroidFromTop}px`;
-    tile.style.pointerEvents = "none"; // Allow plus buttons to be clickable
-    tile.style.boxShadow = "inset 0 0 0 1px black"; // Use shadow to create a border as triangles do not follow the HTML div and need CSS concepts to style or smth
+    tile.style.pointerEvents = "none";
+    tile.style.boxShadow = "inset 0 0 0 1px black";
   }
 
   document.getElementById("grid").appendChild(tile);
 }
 
+function saveBuild() {
+  const buildName = prompt("Enter a name for this build:");
+  if (!buildName) return;
+
+  fetch('/save-build', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      build_name: buildName,
+      generation_data: {
+        shapes: placedShapes,
+        plus_buttons: activePlusButtons
+      }
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert("Build saved! ID: " + data.build_id);
+    } else {
+      alert("Error saving build: " + data.message);
+    }
+  });
+}
+
+
+window.addEventListener('DOMContentLoaded', function () {
+  if (generation_data && generation_data.length > 0) {
+    renderBuild();
+  }
+});
