@@ -138,7 +138,7 @@ function requestTilePlacement(type, size, originNrotation) {
       drawPlusButtonAt(button.x, button.y, button.rotation);
     });
 
-    // Hide menu after first shape placement
+    // Hide menu again after first shape placement
     const menu = document.getElementById("centerMenu");
     if (menu) {
       menu.classList.add("hidden");
@@ -174,8 +174,7 @@ function renderBuild() {
 }
 
 
-
-function addButton(button,x,y,rotation) {
+function addButton(button,x,y,rotation) { 
   buttonInfo = {x, y, rotation}
   const { found, index } = compareButtonInfo(buttonInfo); // Check if each new button to add is already in the list
 

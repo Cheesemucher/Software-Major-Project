@@ -199,7 +199,7 @@ def login():
 @app.route("/build", methods=["GET"])
 def build():
     user_id = session.get("user_id")
-    build_id = request.args.get("id")
+    build_id = request.args.get("id") # Forwards the build ID through the redirect request, which this retrieves
 
     generation_data = {}
 
@@ -209,7 +209,10 @@ def build():
             try:
                 generation_data = json.loads(build.generation_data)
             except Exception:
+                print("build data failed to load")
                 generation_data = {}
+        else:
+            print("no build found")
 
     return render_template("Build.html", generation_data=generation_data) # Send the requested build to load to the frontend. TODO Encrypt TS bruh (encryption should lowkey go into the build class in data.py though)
 
