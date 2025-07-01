@@ -26,10 +26,12 @@ with app.app_context():
     db.create_all()
 
 with app.app_context():
-    # Try querying
+    # Try querying to test stuff
     try:
         users = User.query.all()
+        builds = Build.query.all()
         print("Queried users, table exists. Count:", len(users))
+        print("Queried builds, table exists. Count:", len(builds)) 
     except Exception as e:
         print("Error querying User:", e)
 
@@ -46,7 +48,7 @@ EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9_]+@+.')
 PASSWORD_PATTERN = re.compile(r'^[a-zA-Z0-9_]')
 
 
-# Store placed shapes in session (use a database later on)
+# Store placed shapes in session (convert to proper caching strategy later)
 def get_placed_shapes():
     if 'placed_shapes' not in session:
         session['placed_shapes'] = []
@@ -173,11 +175,12 @@ def login():
             return jsonify({'success': False,'message': 'Invalid password format.'}), 400
         if not EMAIL_PATTERN.match(email):
             return jsonify({'success': False, 'message': 'Invalid email format.'}), 400
-
+        #TODO add the werkzeug security default validation as well
 
         user = lookup_user_by_email(email)
 
         if not user:
+            print("user not found")
             return jsonify({'success': False, 'message': 'User not found.'}), 401
         
         elif not user.check_password(password):
@@ -198,26 +201,40 @@ def login():
 
 @app.route("/build", methods=["GET"])
 def build():
-    user_id = session.get("user_id")
-    build_id = request.args.get("id") # Forwards the build ID through the redirect request, which this retrieves
+    build_id = request.args.get("id") # Forwards the build ID through the redirect request, which this retrieves    
+    session['current_build_ID'] = build_id # Store the current build ID in the session to enable selection of what build to work on
 
-    generation_data = {}
+    return render_template("Build.html") # Send the requested build to load to the frontend. TODO Encrypt generation data in the Build model 
 
-    if user_id and build_id:
-        build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first() # Ensure the current user owns the build when querying to enforce security as build ID is currently quite vulnerable. With proper session management however, this poses no safety concern
-        if build:
-            try:
-                generation_data = json.loads(build.generation_data)
-            except Exception:
-                print("build data failed to load")
-                generation_data = {}
-        else:
-            print("no build found")
 
-    return render_template("Build.html", generation_data=generation_data) # Send the requested build to load to the frontend. TODO Encrypt TS bruh (encryption should lowkey go into the build class in data.py though)
+@app.route("/selected-build", methods=["POST"]) # TODO fetch this info from a function on build.js that runs when that page is loaded. The build data returned should just be whatever is set as the selected build in the session by the 'load build' stuff which means you will also have to remove the build page as a selectable page instead making it accessible only throguh loading a build.
+def selected_build(): 
+    try:
+        user_id = session.get("user_id")
+        build_id = session.get("current_build_ID")
 
-@app.route("/save-build", methods=["POST"])
-def save_build():
+        if not user_id or not build_id:
+            return jsonify({"success": False, "message": "Session data missing"}), 400
+
+        build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first()
+        if not build:
+            return jsonify({"success": False, "message": "Build not found"}), 404
+
+        return jsonify({
+        "success": True,
+        "generation_data": json.loads(build.generation_data) # Encode it into a dict as it needs to be that way to be used by the frontend
+        })
+
+
+    except Exception as e:
+        print("Error retrieving session data:", e) # get rid of this later TODO
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+
+
+
+@app.route("/create-build", methods=["POST"])
+def create():
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"success": False, "message": "Not logged in."}), 403
@@ -236,6 +253,31 @@ def save_build():
     except Exception as e:
         print("Error saving build:", e)
         return jsonify({"success": False, "message": "Failed to save build."}), 500
+
+@app.route("/save-build", methods=["POST"])
+def save_build():
+    try:
+        user_id = session.get("user_id")
+        build_id = session.get("current_build_ID")
+        data = request.get_json()
+
+        if not user_id or not build_id or not data:
+            return jsonify({"success": False, "message": "Missing session or data"}), 400
+
+        build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first()
+        if not build:
+            return jsonify({"success": False, "message": "Build not found"}), 404
+
+        # Update and save
+        build.generation_data = json.dumps(data["generation_data"])
+        db.session.commit()
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print("Error saving build:", e)
+        return jsonify({"success": False, "message": "Server error"}), 500
+
 
 
 @app.route("/place-shape", methods=["POST"]) # Calculate and store location of placed shape
@@ -295,9 +337,6 @@ def place_shape():
         
         if not square_overlaps or not triangle_overlaps:
             filtered_plus_signs.append(plus_sign)
-
-    print("Shapes to be placed:", new_shape)
-    print("Buttons to be placed:", filtered_plus_signs)
     
     return jsonify({
         "placed": [new_shape],

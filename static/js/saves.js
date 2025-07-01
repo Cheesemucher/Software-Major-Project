@@ -42,11 +42,40 @@ function startRename(buildId) {
   }
 
 
-// Open a build by ID
+  function createNewBuild() { 
+    const buildName = prompt("Enter a name for this build:");
+    if (!buildName) return;
+  
+    fetch('/create-build', { // Send a save build request but with an empty build save for the initial button
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        build_name: buildName,
+        generation_data: { // Empty scaffold for generation data with initial plus button data
+          shapes: [],
+          plus_buttons: [{
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2,
+            rotation: 0
+          }]
+        }
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        console.log("Build made! ID: " + data.build_id);
+        window.location.href = `/build?id=${data.build_id}`; // Redirect to the build page with new build loaded
+      } else {
+        console.log("Error saving build: " + data.message);
+      }
+    });
+  }
+
+// Open a build by ID (currently just redirects with build page with the ID as a query parameter to say which build to load)
 function openBuild(buildId) {
     window.location.href = `/build?id=${buildId}`;
 }
 
-function createNewBuild() {
-    window.location.href = "/build"; // No ID starts a fresh build
-}
+
+

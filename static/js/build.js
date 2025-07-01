@@ -125,14 +125,15 @@ function requestTilePlacement(type, size, originNrotation) {
       placedShapes.push({x: tile.x, y: tile.y, type: tile.type, rotation: tile.rotation});
     });
 
-    // Handle Plus button generation
+    // Add plus buttons to activePlusButtons array
     data.plus_points.forEach(p => {
       addButton(p, p.x, p.y, p.rotation)
     });
 
     // Get rid of all the existing buttons before redrawing them
-    removeAllPlusButtons()
-    removePlusButton(selectedPlus)
+    removeAllPlusButtons();
+    removePlusButton(selectedPlus); // Remove the plus button that was clicked on in case it survived somehow as it has a habit of doing so
+    // Real reason is this function removes it from the array so in the case of the first plus button where only one needs to be removed, this function does so
 
     activePlusButtons.forEach(button => {
       drawPlusButtonAt(button.x, button.y, button.rotation);
@@ -147,39 +148,37 @@ function requestTilePlacement(type, size, originNrotation) {
 }
 
 
-function renderBuild() {
-  const shapes = generation_data.shapes || [];
-  let plus_buttons = generation_data.plus_buttons || []; // TODO: Make the default plus button array the single initial plus button
+function renderBuild(generation_data) {
+  console.log("Attempt rendering build with generation data:", generation_data);
 
-  // If build is completely empty, generate default center + button
-  if (shapes.length === 0 && plus_buttons.length === 0) {
-    const grid = document.getElementById('grid');
-    const gridRect = grid.getBoundingClientRect();
-    const centerX = gridRect.width / 2;
-    const centerY = gridRect.height / 2;
-    plus_buttons = [{ x: centerX, y: centerY, rotation: 0 }];
-  }
+  placedShapes = generation_data.shapes; // Override the array for current placed shapes with those from the generation data
+  activePlusButtons = generation_data.plus_buttons; 
 
   // Render shapes
-  shapes.forEach(shape => {
+  placedShapes.forEach(shape => {
     renderTile(shape.x, shape.y, shape.type, shape.rotation);
-    placedShapes.push(shape);
   });
 
   // Render plus buttons
-  plus_buttons.forEach(btn => {
+  activePlusButtons.forEach(btn => {
     drawPlusButtonAt(btn.x, btn.y, btn.rotation);
-    activePlusButtons.push(btn);
   });
 }
 
 
 function addButton(button,x,y,rotation) { 
   buttonInfo = {x, y, rotation}
+
+  // First check if this is the first shape being placed as it will need all sides to have a button if so
+  if (placedShapes.length <= 1) {
+    activePlusButtons.push(button); // Add the first button to the list
+    return; // End the function here (Special privileges, probably some form of nepotism)
+  }
+
   const { found, index } = compareButtonInfo(buttonInfo); // Check if each new button to add is already in the list
 
   if (found) {
-    activePlusButtons.splice(index, 1); // Remove it if found
+    activePlusButtons.splice(index, 1); // Remove both if found (pair annihilation)
   }
 
   else {
@@ -267,34 +266,50 @@ function renderTile(x, y, type, rotation) {
   document.getElementById("grid").appendChild(tile);
 }
 
-function saveBuild() {
-  const buildName = prompt("Enter a name for this build:");
-  if (!buildName) return;
+// Send the current build to the Flask backend server to be saved into the current build object's database
+async function saveBuild() {
 
-  fetch('/save-build', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      build_name: buildName,
-      generation_data: {
-        shapes: placedShapes,
-        plus_buttons: activePlusButtons
-      }
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      alert("Build saved! ID: " + data.build_id);
+  const generationData = { // Define the generation data as a JS object to be sent to the server as that is the standardised format it is to be stored now
+    shapes: placedShapes,
+    plus_buttons: activePlusButtons
+  };
+
+  try {
+    const response = await fetch("/save-build", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ generation_data: generationData })
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      console.log("Build saved successfully.");
     } else {
-      alert("Error saving build: " + data.message);
+      console.error("Failed to save build:", result.message);
     }
-  });
+  } catch (error) {
+    console.error("Error saving build:", error);
+  }
 }
 
 
-window.addEventListener('DOMContentLoaded', function () {
-  if (generation_data && generation_data.length > 0) {
-    renderBuild();
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const res = await fetch('/selected-build', { // Retrieve the selected build data from the server upon page load
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    const result = await res.json();
+    if (!result.success) {
+      console.error("Failed to load build:", result.message);
+      return;
+    }
+
+    renderBuild(result.generation_data); // Render the build with desired data upon page load
+  } catch (error) {
+    console.error("Error fetching build data:", error);
   }
 });

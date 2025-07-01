@@ -30,6 +30,7 @@ def lookup_user_by_email(email):
         return None # Return none if email is not found in the database
     
     normalized_email = email.strip().lower()
+    print("entered email",normalized_email)
     return User.query.filter_by(email=normalized_email).first()
     
 

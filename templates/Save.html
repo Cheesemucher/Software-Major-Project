@@ -1,3 +1,5 @@
+<!-- Switched to jinja file type to accomodate the id being passed through the redirect -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,11 +20,11 @@
 
   <!-- Save Cards -->
   <div class="save-cards-container">
-    {% for build in user_builds %} <!-- Iterate through database to create a div element for each stored build, IDK how this works tbh TODO: learn how this works -->
+    {% for build in user_builds %} <!-- Iterate through database to create a div element for each stored build-->
     <div class="save-card">
       <div class="save-header">
         <span id="build-name-{{ build.id }}" class="editable-name">{{ build.build_name }}</span>
-        <button class="edit-button" onclick="startRename({{ build.id }})">✎</button> <!-- GPT did this tbh idk what it does lmao TODO learn what this does -->
+        <button class="edit-button" onclick="startRename({{ build.id }})">✎</button>  <!-- Jinja structure used to pass id -->
       </div>
 
       <button class="add-button" onclick="openBuild({{ build.id }})">Load</button>
