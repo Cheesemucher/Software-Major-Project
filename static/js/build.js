@@ -2,6 +2,7 @@ let floorCount = 1;
 const TILE_SIDE_LENGTH = 80;
 let placedShapes = [];
 
+/*
 // Floor menu stuff
 function addFloor() {
   floorCount++;
@@ -34,29 +35,124 @@ function editFloorName() {
     input.focus();
     input.select();
   }
+*/
+
+
+// Infinite panning build environment
+let scale = 1;
+let originX = -5000 + window.innerWidth / 2;
+let originY = -5000 + window.innerHeight / 2;
+let isPanning = false;
+let startX, startY;
+
+const viewport = document.getElementById("viewport");
+const canvas = document.getElementById("build-canvas");
+
+// Center on the middle of the canvas initially
+function centerViewportOnCanvas() {
+  const canvasRect = canvas.getBoundingClientRect();
+  const viewWidth = window.innerWidth;
+  const viewHeight = window.innerHeight;
+
+  originX = -(5000 - viewWidth / 2); // center at 5000px
+  originY = -(5000 - viewHeight / 2);
+
+  canvas.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
+}
+
+// Initial transform
+function updateTransform() {
+  canvas.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
+}
+updateTransform();
+
+// Mouse drag to pan
+viewport.addEventListener("mousedown", (e) => {
+  // Only start panning if clicked on empty canvas
+  const target = e.target;
+  const isTile = target.classList.contains("tile");
+  const isPlus = target.classList.contains("plus-button");
+
+  if (isTile || isPlus) return; // Do not pan if clicking a tile or button
+
+  isPanning = true;
+  startX = e.clientX - originX;
+  startY = e.clientY - originY;
+  viewport.classList.add("grabbing");
+});
+
+viewport.addEventListener("mouseup", () => {
+  isPanning = false;
+  viewport.classList.remove("grabbing");
+});
+
+viewport.addEventListener("mouseleave", () => {
+  isPanning = false;
+  viewport.classList.remove("grabbing");
+});
+
+viewport.addEventListener("mousemove", (e) => {
+  if (!isPanning) return;
+  originX = e.clientX - startX;
+  originY = e.clientY - startY;
+  updateTransform();
+});
+
+// Mouse wheel to zoom
+viewport.addEventListener("wheel", (e) => {
+  e.preventDefault();
+
+  const zoomFactor = 0.1;
+  const prevScale = scale;
+
+  if (e.deltaY < 0) {
+    scale *= 1 + zoomFactor;
+  } else {
+    scale /= 1 + zoomFactor;
+  }
+
+  // Clamp scale to avoid infinite zoom
+  scale = Math.min(Math.max(scale, 0.2), 5);
+
+  // Adjust origin to zoom around cursor
+  const rect = viewport.getBoundingClientRect();
+  const dx = e.clientX - rect.left;
+  const dy = e.clientY - rect.top;
+
+  originX -= dx * (scale - prevScale) / scale;
+  originY -= dy * (scale - prevScale) / scale;
+
+  updateTransform();
+}, { passive: false });
+
+
 
 
 // Initialise placement point - will be set properly after DOM loads
 let currentPlacementPoint = {
-  x: 0,
-  y: 0,
+  x: 5000,
+  y: 5000,
   rotation: 0
 };
 
 let selectedPlus = null;
 
 // Tile placement stuff
+
+// Menu toggle functionality
 function toggleMenu(e) {
-  if (e) e.stopPropagation(); // prevent click from bubbling to body
+  console.log("Toggling menu at", currentPlacementPoint.x, currentPlacementPoint.y);
+
+  if (e) e.stopPropagation();
+
   const menu = document.getElementById("centerMenu");
   menu.classList.toggle("hidden");
 
-  // Position menu near the clicked plus button
   if (e && e.target) {
     const rect = e.target.getBoundingClientRect();
-    menu.style.left = (currentPlacementPoint.x - 50) + 'px';
-    menu.style.top = (currentPlacementPoint.y - 30) + 'px';
-    menu.style.transform = 'none';
+    menu.style.left = `${rect.left + rect.width / 2}px`;
+    menu.style.top = `${rect.top + rect.height / 2}px`;
+    menu.style.transform = 'translate(-50%, -50%)';
   }
 }
 
@@ -153,6 +249,7 @@ function renderBuild(generation_data) {
 
   placedShapes = generation_data.shapes; // Override the array for current placed shapes with those from the generation data
   activePlusButtons = generation_data.plus_buttons; 
+  console.log("buttons rn", activePlusButtons);
 
   // Render shapes
   placedShapes.forEach(shape => {
@@ -188,6 +285,7 @@ function addButton(button,x,y,rotation) {
 
 // Draw red + sign at given location with rotation
 function drawPlusButtonAt(x, y, rotation) {
+  console.log("Drawing plus button at", x, y, "with rotation", rotation);
   const plus = document.createElement("div");
   plus.className = "plus-button";
   plus.textContent = "+";
@@ -195,13 +293,14 @@ function drawPlusButtonAt(x, y, rotation) {
   plus.style.top = `${y}px`;
   plus.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
 
-  plus.onclick = (e) => { 
+  plus.onclick = (e) => {
+    e.stopPropagation(); // Prevent document click listener from closing the menu immediately
     currentPlacementPoint = { x, y, rotation };
     toggleMenu(e);
-    selectedPlus = {x, y, rotation}
+    selectedPlus = {x, y, rotation};
   };
 
-  document.getElementById("grid").appendChild(plus);
+  document.getElementById("build-canvas").appendChild(plus);
 }
 
 // Remove all + buttons before placing new ones
@@ -263,7 +362,7 @@ function renderTile(x, y, type, rotation) {
     tile.style.boxShadow = "inset 0 0 0 1px black";
   }
 
-  document.getElementById("grid").appendChild(tile);
+  document.getElementById("build-canvas").appendChild(tile);
 }
 
 // Send the current build to the Flask backend server to be saved into the current build object's database
@@ -286,6 +385,7 @@ async function saveBuild() {
     const result = await response.json();
     if (result.success) {
       console.log("Build saved successfully.");
+      window.location.href = '/saves'; // Exit back to the saves page after successful save
     } else {
       console.error("Failed to save build:", result.message);
     }
@@ -294,8 +394,11 @@ async function saveBuild() {
   }
 }
 
-
+// Called on page load
 window.addEventListener('DOMContentLoaded', async () => {
+  centerViewportOnCanvas(); // Center the viewport on the canvas initially
+
+  console.log("begginning render build")
   try {
     const res = await fetch('/selected-build', { // Retrieve the selected build data from the server upon page load
       method: 'POST',

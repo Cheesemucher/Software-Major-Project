@@ -112,14 +112,17 @@ def register():
             return jsonify({'success': False,'message': 'Invalid password format.'}), 400
         if not EMAIL_PATTERN.match(email):
             return jsonify({'success': False, 'message': 'Invalid email format.'}), 400
+        
+        # Normalize email
+        normalized_email = email.strip().lower()
 
         # Check existing
-        existing = User.query.filter_by(email=email).first()
+        existing = User.query.filter_by(email=normalized_email).first()
         if existing:
             return jsonify({'success': False, 'message': 'Email already registered.'}), 409
 
         # Create user
-        user = User(email=email)
+        user = User(email=normalized_email)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
@@ -162,6 +165,7 @@ def login():
 
         # Input sanitisation
         email = re.escape(email)
+        print("entered email (pre-sanitisation)",email)
         password = re.escape(password)
 
         # Input validation
@@ -190,12 +194,10 @@ def login():
         session.clear()
         session['user_id'] = user.id
 
-        next_url = url_for('build')  # Send them on their way
+        next_url = url_for('saves')  # Send them on their way
         return jsonify({'success': True, 'next_url': next_url}), 200
 
     except Exception as e:
-        # Log exception for debugging only, remove for 'production' to not expose sensitive details in error messages
-        app.logger.exception("Unhandled exception in /login")
         return jsonify({'success': False, 'message': 'Server error. Please try again.'}), 500
 
 
@@ -203,8 +205,10 @@ def login():
 def build():
     build_id = request.args.get("id") # Forwards the build ID through the redirect request, which this retrieves    
     session['current_build_ID'] = build_id # Store the current build ID in the session to enable selection of what build to work on
+    
+    print("picked build", build_id)
 
-    return render_template("Build.html") # Send the requested build to load to the frontend. TODO Encrypt generation data in the Build model 
+    return render_template("Build.html") 
 
 
 @app.route("/selected-build", methods=["POST"]) # TODO fetch this info from a function on build.js that runs when that page is loaded. The build data returned should just be whatever is set as the selected build in the session by the 'load build' stuff which means you will also have to remove the build page as a selectable page instead making it accessible only throguh loading a build.
@@ -220,6 +224,7 @@ def selected_build():
         if not build:
             return jsonify({"success": False, "message": "Build not found"}), 404
 
+        print("sending forwarding build data", build.generation_data) # get rid of this later TODO
         return jsonify({
         "success": True,
         "generation_data": json.loads(build.generation_data) # Encode it into a dict as it needs to be that way to be used by the frontend

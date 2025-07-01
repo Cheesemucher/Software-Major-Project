@@ -2,90 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
   <title>Build</title>
-
-  <!-- Link external CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/build.css') }}">
 </head>
-
-
 <body>
-  <!-- Top Navigation -->
-  <div class="top-bar">
-    <a href="{{ url_for('login') }}"><button class="top-button">Logout</button></a>
-    <a href="{{ url_for('saves') }}"><button class="top-button">Saves</button></a>
-    <a href="{{ url_for('build') }}"><button class="top-button">Build</button></a>
-    <a href="{{ url_for('recs') }}"><button class="top-button">Recs</button></a>
-    <a href="{{ url_for('blackjack') }}"><button class="top-button">Blackjack</button></a>
+
+  <!-- Top Left Save & Exit Button -->
+  <div id="top-left-controls">
+    <button id="save-exit-button" onclick="saveBuild()">Save & Exit</button>
   </div>
 
-  <div class="main">
-    <!-- Left Sidebar -->
-    <button onclick="saveBuild()">Save Build</button>
-    <div class="left-panel">
-      <div class="toggle-button">Toggle</div>
-      <div class="category">
-        <label>
-          Foundation <input type="checkbox">
-        </label>
-      </div>
-      <div class="category">
-        <label>
-          Ceiling <input type="checkbox">
-        </label>
-      </div>
-      <div class="category">
-        <label>
-          Walls <input type="checkbox">
-        </label>
-      </div>
-      <div class="category">
-        <label>
-          Roof <input type="checkbox">
-        </label>
-      </div>
-      <div class="category">
-        <label>
-          Stairs <input type="checkbox">
-        </label>
-      </div>
+  <!-- Define the hidden shape placement menu -->
+  <div id="centerMenu" class="popup-menu hidden">
+    <button onclick="placeFromMenu('square')">Square</button>
+    <button onclick="placeFromMenu('triangle')">Triangle</button>
+  </div> 
+
+  <!-- Scrollable Build Canvas -->
+  <div id="viewport">
+    <div id="build-canvas">
+      <div id="center-point"></div>
+      <!-- Generated tile and plus button elements will be inserted here in the actual program -->
     </div>
-
-    <!-- Center Grid -->
-    <div class="middle-panel">
-      <div class="grid-bg"></div>
-    
-      <!-- Grid to contain tiles and + buttons -->
-      <div id="grid" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0;"></div>
-    
-      <!-- Menu that pops up -->
-      <div id="centerMenu" class="popup-menu hidden">
-        <button onclick="placeFromMenu('square')">Square</button>
-        <button onclick="placeFromMenu('triangle')">Triangle</button>
-      </div>   
-    </div>
-    
-
-    <!-- Right Sidebar -->
-    <div class="right-panel">
-      <div class="floor-button">Floors</div>
-
-      <div id="floorList">
-        <div class="floor-label">
-          <input type="text" value="Floor 1" disabled />
-          <button onclick="editFloorName(this)">✎</button>
-        </div>
-      </div>
-      
-      <button onclick="addFloor()">+</button>
-    </div>
-
   </div>
 
-  
-  <script src="{{ url_for('static', filename='js/build.js') }}"></script>  
+  <script src="{{ url_for('static', filename='js/build.js') }}"></script>
 </body>
 </html>

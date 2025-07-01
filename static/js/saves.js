@@ -54,8 +54,8 @@ function startRename(buildId) {
         generation_data: { // Empty scaffold for generation data with initial plus button data
           shapes: [],
           plus_buttons: [{
-            x: window.innerWidth / 2,
-            y: window.innerHeight / 2,
+            x: 5000, // Center of the canvas
+            y: 5000,
             rotation: 0
           }]
         }

@@ -27,7 +27,7 @@ class User(db.Model):
 # Helper functions for querying database:
 def lookup_user_by_email(email):
     if not email:
-        return None # Return none if email is not found in the database
+        return None # Return none if no email was entered
     
     normalized_email = email.strip().lower()
     print("entered email",normalized_email)
@@ -40,7 +40,7 @@ class Build(db.Model):
     __tablename__ = 'builds'
     id = db.Column(db.Integer, primary_key=True)
     build_name = db.Column(db.String(255), nullable=False)
-    generation_data = db.Column(db.Text, nullable=False)
+    generation_data = db.Column(db.Text, nullable=False) # TODO: ENCRYPT THIS DATA
     linked_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def set_build_name(self, name: str):
