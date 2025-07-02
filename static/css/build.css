@@ -139,3 +139,27 @@ body {
     pointer-events: none;
     z-index: 1;
   }
+
+  .delete-button {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: rgba(255, 132, 0, 0.8);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+    z-index: 5;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  
+  .delete-button:hover {
+    background: rgba(255, 132, 0, 0.60)#ff4444;
+  }
+
+  .delete-button:active {
+    background: rgba(255, 132, 0, 1);
+  }

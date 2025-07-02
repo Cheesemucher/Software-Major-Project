@@ -136,6 +136,7 @@ let currentPlacementPoint = {
 };
 
 let selectedPlus = null;
+let selectedTile = null; // Currently selected tile for deletion or modification
 
 // Tile placement stuff
 
@@ -184,6 +185,7 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 let activePlusButtons = [];
+let activeMinusButtons = []; // Delete buttons
 
 // Called when user clicks a tile type in the popup menu
 function placeFromMenu(shapeType) {
@@ -207,7 +209,7 @@ function requestTilePlacement(type, size, originNrotation) {
   .then(data => {
     if (data.error) {
       console.log("Error placing shape:", data.error);
-      // Close the menu without placing anything
+      // Close the menu without placing anything if there was an error
       const menu = document.getElementById("centerMenu");
       if (menu) {
         menu.classList.add("hidden");
@@ -219,6 +221,9 @@ function requestTilePlacement(type, size, originNrotation) {
     data.placed.forEach(tile => {
       renderTile(tile.x, tile.y, tile.type, tile.rotation);
       placedShapes.push({x: tile.x, y: tile.y, type: tile.type, rotation: tile.rotation});
+
+      drawDeleteButtonAt(tile.type, size, {x: tile.x, y: tile.y, rotation: tile.rotation}); // Draw delete button at the center of the placed tile
+      activeMinusButtons.push({type: tile.type, size: size, originNrotation: {x: tile.x, y: tile.y, rotation: tile.rotation}})
     });
 
     // Add plus buttons to activePlusButtons array
@@ -243,6 +248,61 @@ function requestTilePlacement(type, size, originNrotation) {
   });
 }
 
+function deleteTile(type, size, originNrotation) {
+  const { x, y, rotation } = originNrotation;
+
+  if (type === "square") {
+    localPlusPoints = getSquareEdgePositions({ x, y }, rotation, size);
+  } else if (type === "triangle") {
+    localPlusPoints = getTriangleEdgePositions({ x, y }, rotation, size);
+  } else {
+    console.log("Unsupported shape type:", type);
+    return;
+  }
+
+  // Handle tile deletion
+  localPlusPoints.forEach(p => {
+    let newRotation = (p.rotation + 180) % 360; // Flip the rotation by 180 degrees as the deletion generates the buttons backwards
+    p.rotation = newRotation; // Update the rotation in the p object (the button object)
+    addButton(p, p.x, p.y, newRotation) // Ironically adding the buttons again fixes everything as the already present ones will get pair annihilated whilst the missing ones will be generated (thats like why i did that function)
+  });
+
+
+  // Remove the desired shape both from array and visually
+  placedShapes = placedShapes.filter(shape =>
+    !(shape.type === type &&
+      shape.x === x &&
+      shape.y === y &&
+      shape.rotation === rotation));
+  const allTiles = document.querySelectorAll('.tile');
+  allTiles.forEach(tile => {
+    const left = parseFloat(tile.style.left);
+    const top = parseFloat(tile.style.top);
+    if (Math.abs(left - x) < 1 && Math.abs(top - y) < 1) {
+      tile.remove();
+    }
+  });
+
+  // Remove the delete button for the deleted shape both from the array and visually as well
+  activeMinusButtons = activeMinusButtons.filter(shape =>
+    !(shape.originNrotation === originNrotation));
+
+  const allMinus = document.querySelectorAll('.delete-button');
+  allMinus.forEach(btn => {
+    const left = parseFloat(btn.style.left);
+    const top = parseFloat(btn.style.top);
+    if (Math.abs(left - x) < 1 && Math.abs(top - y) < 1) {
+      btn.remove();
+    }
+  });
+
+  // Regenerate all + buttons
+  removeAllPlusButtons();
+  activePlusButtons.forEach(button => {
+    drawPlusButtonAt(button.x, button.y, button.rotation);
+  });
+  
+}
 
 function renderBuild(generation_data) {
   console.log("Attempt rendering build with generation data:", generation_data);
@@ -254,6 +314,7 @@ function renderBuild(generation_data) {
   // Render shapes
   placedShapes.forEach(shape => {
     renderTile(shape.x, shape.y, shape.type, shape.rotation);
+    drawDeleteButtonAt(shape.type, TILE_SIDE_LENGTH, {x: shape.x, y: shape.y, rotation: shape.rotation});
   });
 
   // Render plus buttons
@@ -302,6 +363,28 @@ function drawPlusButtonAt(x, y, rotation) {
 
   document.getElementById("build-canvas").appendChild(plus);
 }
+
+// Same deal but for a delete button that should be in the centre of a generated shape
+function drawDeleteButtonAt(type, size, originNrotation) {
+  const { x, y, rotation } = originNrotation;
+  console.log("Drawing delete button at", x, y, "with rotation", rotation);
+
+  const minus = document.createElement("div");
+  minus.className = "delete-button";
+  minus.textContent = "🗑";  // Trash can emoji type shii -> maybe do a X emoji or smth
+
+  minus.style.left = `${x}px`;
+  minus.style.top = `${y}px`;
+  minus.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+
+  minus.onclick = (e) => {
+    e.stopPropagation(); // Prevent outside click listeners from interfering
+    deleteTile(type, size, originNrotation); // Delete tile + cleanup
+  };
+
+  document.getElementById("build-canvas").appendChild(minus);
+}
+
 
 // Remove all + buttons before placing new ones
 function removeAllPlusButtons() {
@@ -416,3 +499,35 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.error("Error fetching build data:", error);
   }
 });
+
+
+// Helper functions to find all plus buttons from a given shape type and its position, TODO: Might replace the call to backend with these functions for the actual shape generation too in the future to prevent clutter since I am not using that to store shapes anyway
+
+// Basically converted the helper functions in the shape.py file into JS code
+function getSquareEdgePositions(centre, rotation) {
+  const rad = rotation * Math.PI / 180;
+  const out = [];
+  for (let i = 0; i < 4; i++) {
+    const a = rad + i * (Math.PI / 2);
+    out.push({
+      x: centre.x + (TILE_SIDE_LENGTH / 2) * Math.sin(a),
+      y: centre.y - (TILE_SIDE_LENGTH / 2) * Math.cos(a),
+      rotation: (a * 180 / Math.PI) % 360
+    });
+  }
+  return out;
+}
+
+function getTriangleEdgePositions(centre, rotation) {
+  const height = Math.sqrt(3) / 2 * TILE_SIDE_LENGTH;
+  const d = height / 3;
+  const base = rotation * Math.PI / 180 + Math.PI;
+  return [0, 2 / 3 * Math.PI, -2 / 3 * Math.PI].map(offset => {
+    const a = base + offset;
+    return {
+      x: centre.x + d * Math.sin(a),
+      y: centre.y - d * Math.cos(a),
+      rotation: (a * 180 / Math.PI) % 360
+    };
+  });
+}
