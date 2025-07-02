@@ -39,91 +39,32 @@ function editFloorName() {
 
 
 // Infinite panning build environment
-let scale = 1;
-let originX = -5000 + window.innerWidth / 2;
-let originY = -5000 + window.innerHeight / 2;
-let isPanning = false;
-let startX, startY;
-
 const viewport = document.getElementById("viewport");
 const canvas = document.getElementById("build-canvas");
 
-// Center on the middle of the canvas initially
-function centerViewportOnCanvas() {
-  const canvasRect = canvas.getBoundingClientRect();
-  const viewWidth = window.innerWidth;
-  const viewHeight = window.innerHeight;
 
-  originX = -(5000 - viewWidth / 2); // center at 5000px
-  originY = -(5000 - viewHeight / 2);
+// Use Panzoom library for panning and zooming
+const panzoom = Panzoom(canvas, {
+  maxScale: 5,
+  minScale: 0.2,
+  contain: 'outside' // Allow panning outside the viewport since we have an 'infinite' building space
+});
 
-  canvas.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
+// Center the view on (5000, 5000)
+function centerView() {
+  // Wait a short time to ensure DOM is ready
+  setTimeout(() => {
+    panzoom.pan(window.innerWidth / 2 - 5000, window.innerHeight / 2 - 5000);
+    panzoom.zoom(1);
+  }, 0); // You can try increasing to 50ms or more if needed
 }
 
-// Initial transform
-function updateTransform() {
-  canvas.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
-}
-updateTransform();
-
-// Mouse drag to pan
-viewport.addEventListener("mousedown", (e) => {
-  // Only start panning if clicked on empty canvas
-  const target = e.target;
-  const isTile = target.classList.contains("tile");
-  const isPlus = target.classList.contains("plus-button");
-
-  if (isTile || isPlus) return; // Do not pan if clicking a tile or button
-
-  isPanning = true;
-  startX = e.clientX - originX;
-  startY = e.clientY - originY;
-  viewport.classList.add("grabbing");
+viewport.addEventListener('wheel', (event) => { // Just using the panzoom library for this, seems to work so yippee
+  panzoom.zoomWithWheel(event, {
+    step: 0.02
+  });
 });
 
-viewport.addEventListener("mouseup", () => {
-  isPanning = false;
-  viewport.classList.remove("grabbing");
-});
-
-viewport.addEventListener("mouseleave", () => {
-  isPanning = false;
-  viewport.classList.remove("grabbing");
-});
-
-viewport.addEventListener("mousemove", (e) => {
-  if (!isPanning) return;
-  originX = e.clientX - startX;
-  originY = e.clientY - startY;
-  updateTransform();
-});
-
-// Mouse wheel to zoom
-viewport.addEventListener("wheel", (e) => {
-  e.preventDefault();
-
-  const zoomFactor = 0.1;
-  const prevScale = scale;
-
-  if (e.deltaY < 0) {
-    scale *= 1 + zoomFactor;
-  } else {
-    scale /= 1 + zoomFactor;
-  }
-
-  // Clamp scale to avoid infinite zoom
-  scale = Math.min(Math.max(scale, 0.2), 5);
-
-  // Adjust origin to zoom around cursor
-  const rect = viewport.getBoundingClientRect();
-  const dx = e.clientX - rect.left;
-  const dy = e.clientY - rect.top;
-
-  originX -= dx * (scale - prevScale) / scale;
-  originY -= dy * (scale - prevScale) / scale;
-
-  updateTransform();
-}, { passive: false });
 
 
 
@@ -249,8 +190,10 @@ function requestTilePlacement(type, size, originNrotation) {
 }
 
 function deleteTile(type, size, originNrotation) {
+  
+  
   const { x, y, rotation } = originNrotation;
-
+  /*
   if (type === "square") {
     localPlusPoints = getSquareEdgePositions({ x, y }, rotation, size);
   } else if (type === "triangle") {
@@ -261,12 +204,14 @@ function deleteTile(type, size, originNrotation) {
   }
 
   // Handle tile deletion
+
+  
   localPlusPoints.forEach(p => {
     let newRotation = (p.rotation + 180) % 360; // Flip the rotation by 180 degrees as the deletion generates the buttons backwards
     p.rotation = newRotation; // Update the rotation in the p object (the button object)
-    addButton(p, p.x, p.y, newRotation) // Ironically adding the buttons again fixes everything as the already present ones will get pair annihilated whilst the missing ones will be generated (thats like why i did that function)
+    addButton(p, p.x, p.y, newRotation)
   });
-
+  */
 
   // Remove the desired shape both from array and visually
   placedShapes = placedShapes.filter(shape =>
@@ -278,7 +223,7 @@ function deleteTile(type, size, originNrotation) {
   allTiles.forEach(tile => {
     const left = parseFloat(tile.style.left);
     const top = parseFloat(tile.style.top);
-    if (Math.abs(left - x) < 1 && Math.abs(top - y) < 1) {
+    if (Math.abs(left - x) < 1 && Math.abs(top - y) < 1) { 
       tile.remove();
     }
   });
@@ -297,11 +242,55 @@ function deleteTile(type, size, originNrotation) {
   });
 
   // Regenerate all + buttons
-  removeAllPlusButtons();
-  activePlusButtons.forEach(button => {
-    drawPlusButtonAt(button.x, button.y, button.rotation);
+  regeneratePlusButtons();
+}
+
+function regeneratePlusButtons() {
+  removeAllPlusButtons(); // Clear all existing ones
+  activePlusButtons = [];
+
+  placedShapes.forEach(shape => {
+    const { x, y, type, rotation } = shape;
+
+    // Get theoretical edge buttons for this shape
+    let edgeButtons = [];
+    if (type === "square") {
+      edgeButtons = getSquareEdgePositions({ x, y }, rotation);
+    } else if (type === "triangle") {
+      edgeButtons = getTriangleEdgePositions({ x, y }, rotation);
+    }
+
+    edgeButtons.forEach(edge => {
+      // Simulate placing a new square at this button
+      const squareCentre = getSquareCentre(edge.x, edge.y, edge.rotation);
+      const triangleCentre = getTriangleCentre(edge.x, edge.y, edge.rotation);
+
+      const overlapsSquare = checkOverlapAny(squareCentre, "square");
+      const overlapsTriangle = checkOverlapAny(triangleCentre, "triangle");
+
+      if (!overlapsSquare || !overlapsTriangle) {
+        addButton(edge, edge.x, edge.y, edge.rotation);
+        drawPlusButtonAt(edge.x, edge.y, edge.rotation);
+      }
+    });
   });
-  
+}
+
+// Helper to simulate overlap like your Python version
+function checkOverlapAny(newShape, type) {
+  const buffer = 5; // same thresholds from backend logic
+  return placedShapes.some(existing => {
+    const dx = existing.x - newShape.x;
+    const dy = existing.y - newShape.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    let minDist = 0;
+    if (existing.type === "square" && type === "square") minDist = 75;
+    else if (existing.type === "triangle" && type === "triangle") minDist = 35;
+    else minDist = 58;
+
+    return distance < minDist;
+  });
 }
 
 function renderBuild(generation_data) {
@@ -341,6 +330,7 @@ function addButton(button,x,y,rotation) {
 
   else {
     activePlusButtons.push(button); // Otherwise add it to the list
+    return "button added";
   }
 }
 
@@ -479,7 +469,8 @@ async function saveBuild() {
 
 // Called on page load
 window.addEventListener('DOMContentLoaded', async () => {
-  centerViewportOnCanvas(); // Center the viewport on the canvas initially
+  console.log("centering view");
+  centerView()
 
   console.log("begginning render build")
   try {
@@ -530,4 +521,30 @@ function getTriangleEdgePositions(centre, rotation) {
       rotation: (a * 180 / Math.PI) % 360
     };
   });
+}
+
+function getSquareCentre(click_x, click_y, rotation) {
+  const rotationRad = rotation * Math.PI / 180;
+  const shiftX = (TILE_SIDE_LENGTH / 2) * Math.sin(rotationRad);
+  const shiftY = -(TILE_SIDE_LENGTH / 2) * Math.cos(rotationRad);
+
+  return {
+    x: click_x + shiftX,
+    y: click_y + shiftY
+  };
+}
+
+// Calculates triangle center from edge click position
+function getTriangleCentre(click_x, click_y, rotation) {
+  const height = (Math.sqrt(3) / 2) * TILE_SIDE_LENGTH;
+  const distFromBaseToCentre = height / 3;
+  const rotationRad = rotation * Math.PI / 180;
+
+  const shiftX = distFromBaseToCentre * Math.sin(rotationRad);
+  const shiftY = -distFromBaseToCentre * Math.cos(rotationRad);
+
+  return {
+    x: click_x + shiftX,
+    y: click_y + shiftY
+  };
 }
