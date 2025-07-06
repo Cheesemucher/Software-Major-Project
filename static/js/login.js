@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            // CSRF TOKEN when it is created
+            // 'X-CSRF-Token': getCookie('csrf_token'),  Dont need right
           },
           body: JSON.stringify(payload),
           credentials: 'include',  // for cookies

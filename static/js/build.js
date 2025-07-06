@@ -1,3 +1,4 @@
+
 let floorCount = 1;
 const TILE_SIDE_LENGTH = 80;
 let placedShapes = [];
@@ -137,7 +138,10 @@ function placeFromMenu(shapeType) {
 function requestTilePlacement(type, size, originNrotation) {
   fetch('/place-shape', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': getCookie('csrf_token'), 
+    },
     body: JSON.stringify({
       type,
       size,
@@ -450,7 +454,8 @@ async function saveBuild() {
     const response = await fetch("/save-build", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        'X-CSRF-Token': getCookie('csrf_token'),
       },
       body: JSON.stringify({ generation_data: generationData })
     });
@@ -476,7 +481,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   try {
     const res = await fetch('/selected-build', { // Retrieve the selected build data from the server upon page load
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': getCookie('csrf_token'),
+       }
     });
 
     const result = await res.json();

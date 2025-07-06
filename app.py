@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, make_response
 from flask_sqlalchemy import SQLAlchemy
 import traceback # Temorary debugging exception message tool, not necessary for actual functionality
 import secrets
@@ -13,7 +13,9 @@ from utils.shapes import (
 )
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = secrets.token_hex(16)  # For session management
+app.config["SECRET_KEY"] = secrets.token_hex(16)  # Create session token cookie for session management by default (thank you Flask)
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent XXS and JS from accessing the session cookie
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'  # Helps prevent CSRF attacks from other sites
 app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///users.db'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -21,19 +23,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 #migrate.init_app(app, db)
 
-# Create tables if they don't exist (development use only - poses security risks by printing this information)
+# Create tables if they don't exist
 with app.app_context():
     db.create_all()
-
-with app.app_context():
-    # Try querying to test stuff
-    try:
-        users = User.query.all()
-        builds = Build.query.all()
-        print("Queried users, table exists. Count:", len(users))
-        print("Queried builds, table exists. Count:", len(builds)) 
-    except Exception as e:
-        print("Error querying User:", e)
 
 # + Bonus: Look into adding/using Flask blueprints
 
@@ -68,6 +60,19 @@ def check_shape_overlap(new_shape, existing_shapes): # Need to adjust this upon 
         if check_overlap(new_shape, shape):
             return False # Should be set to true to prevent overlap, disabled for testing purposes
     return False 
+
+
+# Verify CSRF token before all api requests
+@app.before_request
+def csrf_protect():
+    exempt_routes = ['/register', '/login'] # Routes to not check for CSRF tokens in (namely the ones that are run before CSRF token is generated as the user logs in)
+
+    if request.method in ['POST', 'PUT', 'DELETE'] and request.path not in exempt_routes:
+        print("checking CSRF")
+        CSRF_token = request.headers.get('X-CSRF-Token')
+        print("Incoming:" , CSRF_token)
+        if not CSRF_token or CSRF_token != session.get('csrf_token'):
+            return jsonify({'success': False, 'message': 'CSRF token missing or invalid'}), 403
 
 
 # Routes
@@ -153,15 +158,9 @@ def login():
 
     # POST
     try:
-        if request.is_json:
-            data = request.get_json()
-            email = data.get('email', '').strip()
-            password = data.get('password', '')
-        else:
-            # fallback for form-encoded if JS fails or if someone POSTs directly
-            email = request.form.get('email', '').strip()
-            password = request.form.get('password', '')
-            print("fallback used") 
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
 
         # Input sanitisation
         email = re.escape(email)
@@ -188,18 +187,30 @@ def login():
             return jsonify({'success': False, 'message': 'User not found.'}), 401
         
         elif not user.check_password(password):
+            print("wrong password")
             return jsonify({'success': False, 'message': 'Invalid credentials.'}), 401
 
         # Establish session on success
         session.clear()
-        session['user_id'] = user.id
+        print("make user id")
+        session['user_id'] = user.id # Store the current user ID in the session for later use to check who this is when loading builds
+        
+        print("make csrf token")
+        session['csrf_token'] = str(user.id) + str(secrets.token_hex(32))
+        print("csrf token", session['csrf_token'])
 
-        next_url = url_for('saves')  # Send them on their way
-        return jsonify({'success': True, 'next_url': next_url}), 200
+        next_url = url_for('saves') # Redirect to the saves page after login
+
+        response = make_response(jsonify({'success': True, 'next_url': next_url}))
+        response.set_cookie('csrf_token', session['csrf_token'], httponly=False, secure=False, samesite='Strict') # Idk if secure should be set to true or false
+        return response
 
     except Exception as e:
         return jsonify({'success': False, 'message': 'Server error. Please try again.'}), 500
 
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.clear() # Clear the session data on logout
 
 @app.route("/build", methods=["GET"])
 def build():

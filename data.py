@@ -24,6 +24,7 @@ class User(db.Model):
         return check_password_hash(self.password_hash, plain_password)
     
     
+    
 # Helper functions for querying database:
 def lookup_user_by_email(email):
     if not email:
@@ -45,3 +46,9 @@ class Build(db.Model):
 
     def set_build_name(self, name: str):
         self.build_name = name
+
+    def encrypt_generation_data(self, data: str):
+        return data  # Placeholder for encryption logic find some encryption library
+    
+    def decrypt_generation_data(self, data: str):
+        return data # same same
