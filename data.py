@@ -2,9 +2,12 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_migrate import Migrate
+from cryptography.fernet import Fernet
 
 db = SQLAlchemy()
-migrate = Migrate() # For database migration (idk what it is but it looked cool)
+
+key = Fernet.generate_key()
+fernet = Fernet(key) # Encruption key for generation data
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -41,14 +44,14 @@ class Build(db.Model):
     __tablename__ = 'builds'
     id = db.Column(db.Integer, primary_key=True)
     build_name = db.Column(db.String(255), nullable=False)
-    generation_data = db.Column(db.Text, nullable=False) # TODO: ENCRYPT THIS DATA
+    generation_data = db.Column(db.Text, nullable=False)
     linked_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def set_build_name(self, name: str):
         self.build_name = name
 
-    def encrypt_generation_data(self, data: str):
-        return data  # Placeholder for encryption logic find some encryption library
+    def set_generation_data(self, data: str):
+        self.generation_data = fernet.encrypt(data.encode())
     
-    def decrypt_generation_data(self, data: str):
-        return data # same same
+    def get_generation_data(self) -> str:
+        return fernet.decrypt(self.generation_data).decode()

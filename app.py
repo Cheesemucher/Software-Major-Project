@@ -5,7 +5,7 @@ import secrets
 import re
 import json
 #import hashlib using werkzeug instead as an experiemnt
-from data import db, User, migrate, lookup_user_by_email, Build
+from data import db, User, lookup_user_by_email, Build
 from utils.shapes import (
     get_square_centre, get_triangle_centre,
     get_square_edge_positions, get_triangle_edge_positions,
@@ -235,15 +235,13 @@ def selected_build():
         if not build:
             return jsonify({"success": False, "message": "Build not found"}), 404
 
-        print("sending forwarding build data", build.generation_data) # get rid of this later TODO
         return jsonify({
         "success": True,
-        "generation_data": json.loads(build.generation_data) # Encode it into a dict as it needs to be that way to be used by the frontend
+        "generation_data": json.loads(build.get_generation_data()) # Encode it into a dict as it needs to be that way to be used by the frontend
         })
 
 
     except Exception as e:
-        print("Error retrieving session data:", e) # get rid of this later TODO
         return jsonify({"success": False, "message": "Server error"}), 500
 
 
@@ -260,7 +258,9 @@ def create():
         build_name = data.get("build_name", "Untitled Build")
         generation_data = json.dumps(data.get("generation_data", {})) # Convert dictionary data to JSON string for storage
 
-        new_build = Build(build_name=build_name, generation_data=generation_data, linked_user_id=user_id)
+        new_build = Build(build_name=build_name, generation_data=None, linked_user_id=user_id) # Set generation data with setter to default to encryption
+        new_build.set_generation_data(generation_data)  # Encrypt and set generation data
+
         db.session.add(new_build)
         db.session.commit()
 
@@ -285,7 +285,8 @@ def save_build():
             return jsonify({"success": False, "message": "Build not found"}), 404
 
         # Update and save
-        build.generation_data = json.dumps(data["generation_data"])
+        generation_data = json.dumps(data["generation_data"])
+        build.set_generation_data(generation_data)  # Encrypt and set generation data
         db.session.commit()
 
         return jsonify({"success": True})
