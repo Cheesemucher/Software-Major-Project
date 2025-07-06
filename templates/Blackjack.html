@@ -9,7 +9,7 @@
 <body>
   <!-- Top Nav Bar -->
   <div class="top-bar">
-    <a href="{{ url_for('login') }}"><button class="top-button">Login</button></a>
+    <a href="{{ url_for('login') }}"><button class="top-button">Logout</button></a>
     <a href="{{ url_for('saves') }}"><button class="top-button">Saves</button></a>
     <a href="{{ url_for('recs') }}"><button class="top-button">Recs</button></a>
     <a href="{{ url_for('blackjack') }}"><button class="top-button active">Blackjack</button></a>
@@ -44,7 +44,7 @@
       <button class="bj-button">STAND</button>
     </div>
   </div>
-  
+
   <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
 
 </body>

@@ -5,6 +5,7 @@ import secrets
 import re
 import json
 #import hashlib using werkzeug instead as an experiemnt
+from auth import login_processing, register_processing
 from data import db, User, lookup_user_by_email, Build
 from utils.shapes import (
     get_square_centre, get_triangle_centre,
@@ -29,15 +30,6 @@ with app.app_context():
 
 # + Bonus: Look into adding/using Flask blueprints
 
-
-# Regex pattern to validate plaintext inputs
-PATTERN = re.compile(r'^[a-zA-Z0-9_]+$')
-
-# Regex pattern to validate email
-EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9_]+@+.')
-
-# Regex pattern to validate password
-PASSWORD_PATTERN = re.compile(r'^[a-zA-Z0-9_]')
 
 
 # Store placed shapes in session (convert to proper caching strategy later)
@@ -88,35 +80,21 @@ def register():
 
     # POST: handle registration. Expect JSON or fallback to form data.
     try:
-        # Parse JSON or form data
-        if request.is_json:
-            data = request.get_json()
-            if data is None:
-                # JSON parse failed or no JSON sent
-                return jsonify({'success': False, 'message': 'Invalid JSON payload.'}), 400
-            email = data.get('email', '').strip()
-            password = data.get('password', '')
+        # Parse JSON data
+        data = request.get_json()
+        if data is None:
+            # JSON parse failed or no JSON sent
+            return jsonify({'success': False, 'message': 'Invalid JSON payload.'}), 400
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+
+        # Input validation and sanitisation
+        status, result, code = register_processing(email, password)
+        if status == "failure":
+            return result, code
         else:
-            email = request.form.get('email', '').strip()
-            password = request.form.get('password', '')
-
-        # Input sanitisation
-        email = re.escape(email)
-        password = re.escape(password)
-
-        # Input validation
-        if not email or not password:
-            return jsonify({'success': False, 'message': 'Email and password are required.'}), 400
-        if len(email) > 255:
-            return jsonify({'success': False, 'message': 'Email cannot have over 255 characters'}), 400
-        if len(password) < 8:
-            return jsonify({'success': False, 'message': 'Password should have at least 8 characters'}), 400
-        if password == password.lower() or password == password.upper():
-            return jsonify({'success': False, 'message': 'Password must contain at least 1 uppercase and 1 lowercase letter'}), 400
-        if not PASSWORD_PATTERN.match(password):
-            return jsonify({'success': False,'message': 'Invalid password format.'}), 400
-        if not EMAIL_PATTERN.match(email):
-            return jsonify({'success': False, 'message': 'Invalid email format.'}), 400
+            email, password = result
+            print("Result:", code) # Prints "Yippee"
         
         # Normalize email
         normalized_email = email.strip().lower()
@@ -144,16 +122,10 @@ def register():
         app.logger.error("Request content-type: %s, data: %s", request.content_type, request.get_data())
         return jsonify({'success': False, 'message': 'Server error. Please try again.'}), 500
 
-    # Auto-login on registration, add this properly when sessions and user stuff works
-    session.clear()
-    session['user_id'] = user.id
-    next_url = url_for('build')
-
-    return jsonify({'success': True, 'next_url': next_url}), 201
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
+        session.clear()  # Clear session on GET as this happens during a logout
         return render_template('Login.html')
 
     # POST
@@ -162,23 +134,13 @@ def login():
         email = data.get('email', '').strip()
         password = data.get('password', '')
 
-        # Input sanitisation
-        email = re.escape(email)
-        print("entered email (pre-sanitisation)",email)
-        password = re.escape(password)
-
-        # Input validation
-        if not email or not password:
-            return jsonify({'success': False, 'message': 'Email and password are required.'}), 400
-        if len(email) > 255:
-            return jsonify({'success': False, 'message': 'Email cannot have over 255 characters'}), 400
-        if len(password) > 255:
-            return jsonify({'success': False, 'message': 'Password cannot have over 255 characters'}), 400
-        if not PASSWORD_PATTERN.match(password):
-            return jsonify({'success': False,'message': 'Invalid password format.'}), 400
-        if not EMAIL_PATTERN.match(email):
-            return jsonify({'success': False, 'message': 'Invalid email format.'}), 400
-        #TODO add the werkzeug security default validation as well
+         # Input validation and sanitisation
+        status, result, code = register_processing(email, password)
+        if status == "failure":
+            return result, code
+        else:
+            email, password = result
+            print("Result:", code) # Prints "Yippee"
 
         user = lookup_user_by_email(email)
 
@@ -192,12 +154,8 @@ def login():
 
         # Establish session on success
         session.clear()
-        print("make user id")
         session['user_id'] = user.id # Store the current user ID in the session for later use to check who this is when loading builds
-        
-        print("make csrf token")
         session['csrf_token'] = str(user.id) + str(secrets.token_hex(32))
-        print("csrf token", session['csrf_token'])
 
         next_url = url_for('saves') # Redirect to the saves page after login
 
@@ -211,6 +169,7 @@ def login():
 @app.route('/logout', methods=['POST'])
 def logout():
     session.clear() # Clear the session data on logout
+    return redirect(url_for("login"))
 
 @app.route("/build", methods=["GET"])
 def build():

@@ -85,9 +85,13 @@ document.addEventListener('DOMContentLoaded', () => {
             messageDiv.className = 'message-box success';
             messageDiv.textContent = 'Registration successful! Redirecting to login...';
           }
-          const redirectUrl = data.next_url || '/login';
+          const nextUrl = data.next_url || '/login';
           setTimeout(() => {
-            window.location.href = redirectUrl;
+            if (nextUrl && nextUrl.startsWith("/") && !nextUrl.startsWith("//")) {
+              window.location.href = nextUrl;
+            } else {
+              window.location.href = "/"; // Default to dashboard in case of redirection to external URL
+            }
           }, 1000);
         } else {
           // Backend JSON indicates failure

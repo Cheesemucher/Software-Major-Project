@@ -70,8 +70,14 @@ function createNewBuild() {
   .then(res => res.json())
   .then(data => {
     if (data.success) {
+      const nextUrl = `/build?id=${data.build_id}`
       console.log("Build made! ID: " + data.build_id);
-      window.location.href = `/build?id=${data.build_id}`; // Redirect to the build page with new build loaded
+      // Redirect to the build page with new build loaded
+      if (nextUrl && nextUrl.startsWith("/") && !nextUrl.startsWith("//")) {
+        window.location.href = nextUrl;
+      } else {
+        window.location.href = "/"; // Default to dashboard in case of redirection to external URL
+            }
     } else {
       console.log("Error saving build: " + data.message);
     }
@@ -80,7 +86,13 @@ function createNewBuild() {
 
 // Open a build by ID (currently just redirects with build page with the ID as a query parameter to say which build to load)
 function openBuild(buildId) {
-    window.location.href = `/build?id=${buildId}`;
+    const nextUrl = `/build?id=${buildId}`
+    // Redirect to the build page with desired build loaded
+    if (nextUrl && nextUrl.startsWith("/") && !nextUrl.startsWith("//")) {
+      window.location.href = nextUrl;
+    } else {
+      window.location.href = "/"; // Default to dashboard in case of redirection to external URL
+          }
 }
 
 

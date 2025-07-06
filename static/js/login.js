@@ -60,8 +60,13 @@ document.addEventListener('DOMContentLoaded', () => {
               messageDiv.className = 'message-box success';
               messageDiv.textContent = 'Login successful! Redirecting...';
             }
-            // redirect
-            window.location.href = data.next_url;
+            const nextUrl = data.next_url 
+            // Only allow relative URLs starting with "/" and not "//" (which would be external) to prevent invalid forwarding
+            if (nextUrl && nextUrl.startsWith("/") && !nextUrl.startsWith("//")) {
+              window.location.href = nextUrl;
+            } else {
+              window.location.href = "/"; // Fallback route (e.g., dashboard)
+            }
           } 
           else {
             // response was 2xx but JSON indicates failure or missing fields

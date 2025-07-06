@@ -463,7 +463,14 @@ async function saveBuild() {
     const result = await response.json();
     if (result.success) {
       console.log("Build saved successfully.");
-      window.location.href = '/saves'; // Exit back to the saves page after successful save
+      // Exit back to the saves page after successful save
+      const nextUrl = '/saves'; 
+      if (nextUrl && nextUrl.startsWith("/") && !nextUrl.startsWith("//")) {
+              window.location.href = nextUrl;
+            } else {
+              window.location.href = "/"; // Default to dashboard in case of redirection to external URL
+            }
+
     } else {
       console.error("Failed to save build:", result.message);
     }
