@@ -6,7 +6,7 @@ from cryptography.fernet import Fernet
 
 db = SQLAlchemy()
 
-key = Fernet.generate_key()
+key = b'ZpFP_-UuAaK6yU_Sdy5byX6Ax1PX3KQqJkTvuKpZlEA=' # Constant, hardcoded encryption key for testing pruposes
 fernet = Fernet(key) # Encruption key for generation data
 
 class User(db.Model):
@@ -54,4 +54,6 @@ class Build(db.Model):
         self.generation_data = fernet.encrypt(data.encode())
     
     def get_generation_data(self) -> str:
-        return fernet.decrypt(self.generation_data).decode()
+        decrypted_data = fernet.decrypt(self.generation_data).decode()
+        print("Decrypted data:", decrypted_data)
+        return decrypted_data

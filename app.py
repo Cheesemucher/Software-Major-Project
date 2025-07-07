@@ -60,9 +60,7 @@ def csrf_protect():
     exempt_routes = ['/register', '/login'] # Routes to not check for CSRF tokens in (namely the ones that are run before CSRF token is generated as the user logs in)
 
     if request.method in ['POST', 'PUT', 'DELETE'] and request.path not in exempt_routes:
-        print("checking CSRF")
         CSRF_token = request.headers.get('X-CSRF-Token')
-        print("Incoming:" , CSRF_token)
         if not CSRF_token or CSRF_token != session.get('csrf_token'):
             return jsonify({'success': False, 'message': 'CSRF token missing or invalid'}), 403
 
@@ -135,7 +133,7 @@ def login():
         password = data.get('password', '')
 
          # Input validation and sanitisation
-        status, result, code = register_processing(email, password)
+        status, result, code = login_processing(email, password)
         if status == "failure":
             return result, code
         else:
@@ -185,7 +183,9 @@ def build():
 def selected_build(): 
     try:
         user_id = session.get("user_id")
+        print("Current user logged in: ", user_id)
         build_id = session.get("current_build_ID")
+        print("Current build ID:", build_id)
 
         if not user_id or not build_id:
             return jsonify({"success": False, "message": "Session data missing"}), 400
@@ -194,6 +194,10 @@ def selected_build():
         if not build:
             return jsonify({"success": False, "message": "Build not found"}), 404
 
+        print("Selected build:", build_id)
+        print("Raw encrypted data:", build.generation_data)
+        print("Build generation data:", build.get_generation_data())
+
         return jsonify({
         "success": True,
         "generation_data": json.loads(build.get_generation_data()) # Encode it into a dict as it needs to be that way to be used by the frontend
@@ -201,6 +205,7 @@ def selected_build():
 
 
     except Exception as e:
+        print("Error retrieving build:", e)
         return jsonify({"success": False, "message": "Server error"}), 500
 
 
@@ -245,7 +250,7 @@ def save_build():
 
         # Update and save
         generation_data = json.dumps(data["generation_data"])
-        build.set_generation_data(generation_data)  # Encrypt and set generation data
+        build.set_generation_data(data=generation_data)  # Encrypt and set generation data
         db.session.commit()
 
         return jsonify({"success": True})
