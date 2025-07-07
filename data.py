@@ -34,7 +34,6 @@ def lookup_user_by_email(email):
         return None # Return none if no email was entered
     
     normalized_email = email.strip().lower()
-    print("entered email",normalized_email)
     return User.query.filter_by(email=normalized_email).first()
     
 
@@ -55,5 +54,4 @@ class Build(db.Model):
     
     def get_generation_data(self) -> str:
         decrypted_data = fernet.decrypt(self.generation_data).decode()
-        print("Decrypted data:", decrypted_data)
         return decrypted_data

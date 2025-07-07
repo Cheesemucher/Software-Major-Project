@@ -12,6 +12,7 @@ from utils.shapes import (
     get_square_edge_positions, get_triangle_edge_positions,
     check_overlap, TILE_SIDE_LENGTH
 )
+from utils.regressor import *
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = secrets.token_hex(16)  # Create session token cookie for session management by default (thank you Flask)
@@ -195,7 +196,6 @@ def selected_build():
             return jsonify({"success": False, "message": "Build not found"}), 404
 
         print("Selected build:", build_id)
-        print("Raw encrypted data:", build.generation_data)
         print("Build generation data:", build.get_generation_data())
 
         return jsonify({
@@ -250,7 +250,7 @@ def save_build():
 
         # Update and save
         generation_data = json.dumps(data["generation_data"])
-        build.set_generation_data(data=generation_data)  # Encrypt and set generation data
+        build.set_generation_data(generation_data)  # Encrypt and set generation data
         db.session.commit()
 
         return jsonify({"success": True})
@@ -356,6 +356,15 @@ def rename_build(build_id):
 @app.route("/recs")
 def recs():
     return render_template("Recs.html")
+
+@app.route("/example-rec")
+def example_rec():
+    build_dataset = load_build_dataset_from_csv("utils/meta_builds.csv")
+    current_build = session.get("current_build_ID")
+    model = train_model(build_dataset)
+
+    print(predict_next_tile(model, build_dataset[0]["shapes"], current_build)) # Predict next tile based on the first build in the dataset
+    
 
 @app.route("/blackjack")
 def blackjack():
