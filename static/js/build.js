@@ -443,7 +443,7 @@ function renderTile(x, y, type, rotation) {
 }
 
 // Send the current build to the Flask backend server to be saved into the current build object's database
-async function saveBuild() {
+async function saveBuild(shouldRedirect = true) {
 
   const generationData = { // Define the generation data as a JS object to be sent to the server as that is the standardised format it is to be stored now
     shapes: placedShapes,
@@ -463,14 +463,17 @@ async function saveBuild() {
     const result = await response.json();
     if (result.success) {
       console.log("Build saved successfully.");
-      // Exit back to the saves page after successful save
-      const nextUrl = '/saves'; 
-      if (nextUrl && nextUrl.startsWith("/") && !nextUrl.startsWith("//")) {
-              window.location.href = nextUrl;
-            } else {
-              window.location.href = "/"; // Default to dashboard in case of redirection to external URL
-            }
 
+      if (shouldRedirect) {
+        // Exit back to the saves page after successful save
+        const nextUrl = '/saves'; 
+        if (nextUrl && nextUrl.startsWith("/") && !nextUrl.startsWith("//")) {
+          window.location.href = nextUrl;
+        } 
+        else {
+          window.location.href = "/"; // Default to dashboard in case of redirection to external URL
+        }
+      }
     } else {
       console.error("Failed to save build:", result.message);
     }
@@ -479,6 +482,26 @@ async function saveBuild() {
   }
 }
 
+async function openRecs() {
+  // Save build before leaving page
+  const success = await saveBuild(false); // prevent auto-redirect with flag
+  if (success) {
+    window.location.href = '/recs';
+  }
+
+  const nextUrl = '/recs'; 
+  // Use safer way of redirecting just to be safe, should be no opportuntiy for external URLs here but just in case
+  if (nextUrl && nextUrl.startsWith("/") && !nextUrl.startsWith("//")) {
+    window.location.href = nextUrl;} 
+  else {
+    window.location.href = "/"; // Default to dashboard in case of redirection to external URL
+  }
+}
+
+function openSettings() {
+  // TODO: Make settings page with colourblind option or something and button size changing stuff
+  console.log("Settings clicked");
+}
 
 
 

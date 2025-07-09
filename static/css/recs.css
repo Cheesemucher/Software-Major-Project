@@ -6,6 +6,31 @@ body {
     color: #fff;
 }
 
+/* 'Exit back to build' Button in Top Left */
+#top-left-controls {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+}
+
+#back-to-build-button {
+  padding: 10px 20px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+#back-to-build-button:hover {
+  opacity: 0.8;
+}
+
+
+/* Reccomendations formatting */
+
 .recs-container {
   display: flex;
   justify-content: space-around;

@@ -162,9 +162,10 @@ function openBuild(buildId) {
     // Redirect to the build page with desired build loaded
     if (nextUrl && nextUrl.startsWith("/") && !nextUrl.startsWith("//")) {
       window.location.href = nextUrl;
-    } else {
+    } 
+    else {
       window.location.href = "/"; // Default to dashboard in case of redirection to external URL
-          }
+    }
 }
 
 

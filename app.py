@@ -450,6 +450,14 @@ def copy_build():
     except Exception as e:
         print("Error copying build:", e)
         return jsonify({"success": False, "message": "Server error"}), 500
+    
+@app.route("/get-current-bID", methods=["GET"])
+def getBID(): # Returns current build ID stored in the session
+    current_build_ID = session.get("current_build_ID")
+    if not current_build_ID:
+        return jsonify({"success": False, "message": "No build selected"}), 404
+    print("Build ID to be got", current_build_ID)
+    return jsonify({"success": True, "build_id": current_build_ID}), 200
 
 @app.route("/blackjack")
 def blackjack():
