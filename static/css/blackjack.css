@@ -1,93 +1,251 @@
-/* Blackjack main layout */
+/* Set base font scaling */
+html {
+  font-size: 16px; /* 1rem = 16px */
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main Blackjack area */
 .blackjack-game {
-    display: flex;
-    justify-content: space-between;
-    gap: 40px;
-    padding: 40px;
-    height: calc(100vh - 70px);
-    background: var(--primary-bg);
+  display: flex;
+  justify-content: space-between;
+  gap: 2.5rem;         /* 40px */
+  padding: 2.5rem;     /* 40px */
+  height: calc(100vh - 4.375rem); /* 70px */
+  background: var(--primary-bg);
+}
+
+/* Left gameplay panel */
+.left-panel-bj {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 2.5rem;        /* 40px */
+  padding-right: 1.25rem; /* 20px */
+  color: white;
+  font-size: 1.25rem; /* 20px */
+}
+
+/* Right control panel */
+.right-panel-bj {
+  flex: 1;
+  background: #5c2f28;
+  border-radius: 0.75rem; /* 12px */
+  padding: 2.5rem;        /* 40px */
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 1.875rem;     /* 30px */
+  font-size: 1.25rem; /* 20px */
+}
+
+/* Bet input */
+#player-balance {
+  margin-bottom: 0.625rem; /* 10px */
+  font-size: 1.1em;
+  color: white;
+}
+
+.bet-input-section {
+  margin-bottom: 1.25rem;  /* 20px */
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;           /* 10px */
+}
+
+#bet-amount-input {
+  width: 6.25rem;          /* 100px */
+  padding: 0.375rem;       /* 6px */
+  font-size: 1em;
+  border-radius: 0.25rem;  /* 4px */
+  border: 1px solid #ccc;
+}
+
+/* Card hands */
+#player-hand,
+#dealer-hand {
+  display: flex;
+  gap: 1rem;                /* 16px */
+  padding: 1rem;            /* 16px */
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 10em;
+  flex-wrap: wrap;
+}
+
+.card-img {
+  width: clamp(3.75em, 8vw, 7.5em); /* min 60px, max 120px */
+  height: auto;
+  border-radius: 0.375em;
+  box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.card-img:hover {
+  transform: scale(1.05);
+}
+
+/* Card boxes */
+.bj-card-box {
+  width: 100%;
+  padding: 1rem;
+  box-sizing: border-box;
+  background-color: #a34735;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: flex-start;
+  align-items: flex-start;
+  min-height: 10em;
+}
+
+/* Text labels */
+.bj-text-block {
+  font-size: 1.375rem; /* 22px */
+  font-weight: bold;
+  line-height: 1.6;
+}
+
+/* Pot & multiplier bar */
+.bj-multiplier-pot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #4a2c27;
+  padding: 0.875rem 1.5rem;  /* 14px 24px */
+  border-radius: 0.625rem;   /* 10px */
+  font-size: 1.125rem;       /* 18px */
+}
+
+.bj-pot {
+  font-weight: bold;
+}
+
+/* Buttons */
+.bj-button {
+  padding: 1.125rem;         /* 18px */
+  font-size: 1.375rem;       /* 22px */
+  font-weight: bold;
+  color: white;
+  background: var(--accent-color);
+  border: none;
+  border-radius: 0.375rem;   /* 6px */
+  cursor: pointer;
+  width: 100%;
+}
+
+.bj-button:hover {
+  background: #8a3a2f;
+}
+
+/* Bet amount tag */
+.bet-amount {
+  background: var(--accent-color);
+  padding: 0.375rem 0.875rem;  /* 6px 14px */
+  border-radius: 0.375rem;
+  font-weight: bold;
+  display: inline-block;
+  font-size: 1.375rem;
+}
+
+/* Card + text group wrapper */
+.bj-hand-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;        /* 8px */
+  flex-grow: 1;
+  min-height: 11.25em; /* ~180px */
+}
+
+
+
+/* Bust animating */
+#bust-animation {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 5rem;
+  font-weight: bold;
+  color: #ff4e4e;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+.bust-visible {
+  opacity: 1;
+  animation: pop-in-out 1.6s ease forwards;
+}
+
+@keyframes pop-in-out {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
   }
-  
-  /* Left gameplay area */
-  .left-panel-bj {
-    flex: 2;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    gap: 40px;
-    padding-right: 20px;
-    color: white;
-    font-size: 20px; /* increased */
+  20% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
   }
-  
-  /* Right control panel */
-  .right-panel-bj {
-    flex: 1;
-    background: #5c2f28;
-    border-radius: 12px;
-    padding: 40px;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    gap: 30px;
-    font-size: 20px; /* increased */
+  60% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
   }
-  
-  /* Card boxes */
-  .bj-card-box {
-    background: var(--accent-color);
-    border-radius: 6px;
-    height: 140px; /* increased */
-    width: 100%;
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
   }
-  
-  /* Info blocks */
-  .bj-text-block {
-    font-size: 22px;
-    font-weight: bold;
-    line-height: 1.6;
-  }
-  
-  /* Pot and multiplier */
-  .bj-multiplier-pot {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #4a2c27;
-    padding: 14px 24px;
-    border-radius: 10px;
-    font-size: 18px;
-  }
-  
-  .bj-pot {
-    font-weight: bold;
-  }
-  
-  /* Buttons */
-  .bj-button {
-    padding: 18px;
-    font-size: 22px;
-    font-weight: bold;
-    color: white;
-    background: var(--accent-color);
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    width: 100%;
-  }
-  
-  .bj-button:hover {
-    background: #8a3a2f;
-  }
-  
-  /* Bet styling */
-  .bet-amount {
-    background: var(--accent-color);
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-weight: bold;
-    display: inline-block;
-    font-size: 22px;
-  }
-  
+}
+
+.bust-hidden {
+  opacity: 0;
+}
+
+/* Flip card animation */
+.flip-card {
+  width: clamp(3.75em, 8vw, 7.5em);
+  height: auto;
+  perspective: 1000px;
+  display: inline-block;
+}
+
+.flip-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.8s ease;
+  aspect-ratio: 1 / 1.4; /* For card shape */
+}
+
+.flip-card.flip .flip-inner {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.5em;
+  position: absolute;
+  top: 0;
+  left: 0;
+  backface-visibility: hidden;
+}
+
+.card-face.back {
+  transform: rotateY(180deg);
+}

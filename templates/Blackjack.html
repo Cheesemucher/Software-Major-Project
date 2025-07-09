@@ -17,34 +17,54 @@
   <!-- Blackjack Game Layout -->
   <div class="blackjack-game">
     <div class="left-panel-bj">
-      <div class="bj-text-block">
-        <p><strong>Dealer Total</strong><br>display cards here</p>
+      <div class="bj-hand-block">
+        <div class="bj-text-block">
+          <p><strong>Dealer Hand</strong><br></p>
+        </div>
+        <div class="bj-card-box" id="dealer-hand">
+          <!-- Dealer Hand -->
+            <img class="card-img" src="{{ url_for('static', filename='elements/RustCards/back.png') }}" alt="Back of Card">
+            <img class="card-img" src="{{ url_for('static', filename='elements/RustCards/back.png') }}" alt="Back of Card">
+        </div>
       </div>
-
-      <div class="bj-card-box"></div>
 
       <div class="bj-multiplier-pot">
         <span>0x multiplier</span>
         <span class="bj-pot">Pot: XXX Scrap</span>
       </div>
 
-      <div class="bj-card-box"></div>
-
-      <div class="bj-text-block">
-        <p><strong>Your Total</strong><br>display cards here</p>
+      <div class="bj-hand-block">
+        <div class="bj-card-box" id="player-hand">
+        <!-- Player Hand -->
+          <img class="card-img" src="{{ url_for('static', filename='elements/RustCards/back.png') }}" alt="Back of Card">
+          <img class="card-img" src="{{ url_for('static', filename='elements/RustCards/back.png') }}" alt="Back of Card"> 
+        </div>
+        <div class="bj-text-block">
+          <p><strong>Your Hand</strong><br></p>
+        </div>
       </div>
     </div>
 
-    <div class="right-panel-bj">
-      <p><strong>Balance:</strong>$$ Some amount of money</p>
-      <p><strong>Bet:</strong> <span class="bet-amount">$$ some amount of money</span></p>
 
-      <button class="bj-button">HIT</button>
-      <button class="bj-button">STAND</button>
+    <div class="right-panel-bj">
+      <p id="player-balance"><strong>Balance:</strong> $1000</p>
+
+      <!-- Bet Input Section -->
+      <div class="bet-input-section">
+        <label for="bet-amount-input"><strong>Bet:</strong></label>
+        <input type="number" id="bet-amount-input" min="1" placeholder="Enter bet">
+        <button class="bj-button" onclick="startNewRound()">Enter</button>
+      </div>
+
+      <button class="bj-button" onclick="hit()">HIT</button>
+      <button class="bj-button" onclick="stand()">STAND</button>
     </div>
   </div>
 
+  <div id="bust-animation" class="bust-hidden">BUST!</div>
+
   <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/blackjack.js') }}"></script>
 
 </body>
 </html>
