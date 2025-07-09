@@ -57,7 +57,6 @@ def convert_to_embed_url(youtube_url):
     if video_id:
         return f"https://www.youtube.com/embed/{video_id}"
     else:
-        print("Youtube link unformatted:", youtube_url)
         return ""
 
 

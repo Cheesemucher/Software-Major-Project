@@ -5,7 +5,7 @@ import secrets
 import re
 import json
 #import hashlib using werkzeug instead as an experiemnt
-from auth import login_processing, register_processing
+from utils.auth import login_processing, register_processing, plain_text_processing
 from data import db, User, lookup_user_by_email, Build
 from utils.shapes import (
     get_square_centre, get_triangle_centre,
@@ -338,10 +338,12 @@ def saves():
     return render_template("Save.html", user_builds=builds)
 
 @app.route("/rename-build/<int:build_id>", methods=["POST"]) # Rename a build functionality
-def rename_build(build_id):
+def rename_build(build_id:int):
     user_id = session.get("user_id")
     data = request.get_json()
     new_name = data.get("name", "").strip()
+
+    new_name = plain_text_processing(new_name) # Apply validation and sanitisation processing to the new name before entering into DB
 
     if not user_id or not new_name:
         return jsonify({"success": False, "message": "Invalid request"}), 400
@@ -359,6 +361,8 @@ def update_description(build_id):
     user_id = session.get("user_id")
     data = request.get_json()
     new_desc = data.get("description", "").strip()
+
+    new_desc = plain_text_processing(new_desc) # Apply validation and sanitisation process before entering into database
 
     if not user_id or not new_desc:
         return jsonify({"success": False, "message": "Invalid request"}), 400
@@ -456,7 +460,6 @@ def getBID(): # Returns current build ID stored in the session
     current_build_ID = session.get("current_build_ID")
     if not current_build_ID:
         return jsonify({"success": False, "message": "No build selected"}), 404
-    print("Build ID to be got", current_build_ID)
     return jsonify({"success": True, "build_id": current_build_ID}), 200
 
 @app.route("/blackjack")

@@ -60,3 +60,16 @@ def register_processing(email: str, password: str) -> tuple:
         return "failure", jsonify({'success': False, 'message': 'Invalid email format.'}), 400
 
     return "success", [email, password], "Yippee"
+
+def plain_text_processing(text: str) -> str:
+    text = re.escape(text)
+
+    # Input validation
+    if not text:
+        return "failure", jsonify({'success': False, 'message': 'Text is required.'}), 400
+    if len(text) > 255:
+        return "failure", jsonify({'success': False, 'message': 'Text cannot have over 255 characters'}), 400
+    if not TEXT_PATTERN.match(text):
+        return "failure", jsonify({'success': False, 'message': 'Invalid text format.'}), 400
+
+    return text
