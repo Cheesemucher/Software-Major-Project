@@ -1,5 +1,3 @@
-<!-- Switched to jinja file type to accomodate the id being passed through the redirect -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,6 +7,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/saves.css') }}">
 </head>
 <body>
+
   <!-- Top Nav Bar -->
   <div class="top-bar">
     <a href="{{ url_for('login') }}"><button class="top-button">Logout</button></a>
@@ -17,26 +16,42 @@
     <a href="{{ url_for('blackjack') }}"><button class="top-button">Blackjack</button></a>
   </div>
 
-  <!-- Save Cards -->
+  <!-- Save Cards Container -->
   <div class="save-cards-container">
-    {% for build in user_builds %} <!-- Iterate through database to create a div element for each stored build-->
-    <div class="save-card">
-      <div class="save-header">
-        <span id="build-name-{{ build.id }}" class="editable-name">{{ build.build_name }}</span>
-        <button class="edit-button" onclick="startRename({{ build.id }})">✎</button>  <!-- Jinja structure used to pass id -->
-      </div>
+    {% for build in user_builds %}
+      <div class="save-card">
+        <div class="save-header">
+          <div class="save-header-content">
+            <!-- Title -->
+            <span id="build-name-{{ build.id }}" class="editable-name">{{ build.build_name }}</span>
+            <!-- Control buttons -->
+            <button class="icon-button" onclick="startRename({{ build.id }})">✎</button>
+            <button class="icon-button" onclick="editDescription({{ build.id }})">T</button>
+            <button class="icon-button" onclick="deleteBuild({{ build.id }})">🗑️</button>
+          </div>
+        </div>
 
-      <button class="add-button" onclick="openBuild({{ build.id }})">Load</button>
-    </div>
+        <!-- Description container -->
+        <div class="description-box">
+          <div id="description-{{ build.id }}" class="description-text">
+            {{ build.build_description or "Insert description" }}
+          </div>
+        </div>
+
+        <!-- Load button -->
+        <button class="load-button" onclick="openBuild({{ build.id }})">Load</button>
+      </div>
     {% endfor %}
 
     <!-- New Build Card -->
-    <div class="save-card add-card">
-      <button class="add-button" onclick="createNewBuild()">+</button>
+    <div class="new-build-card">
+      <button class="new-build-button" onclick="createNewBuild()">+</button>
     </div>
+
   </div>
 
+  <!-- JS includes -->
   <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/saves.js') }}"></script>  
+  <script src="{{ url_for('static', filename='js/saves.js') }}"></script>
 </body>
 </html>

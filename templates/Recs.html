@@ -1,45 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Recs</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/recs.css') }}">
+    <meta charset="UTF-8">
+    <title>Recommended Builds</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/recs.css') }}">
 </head>
 <body>
-  <!-- Top Nav Bar -->
-  <div class="top-bar">
-    <a href="{{ url_for('login') }}"><button class="top-button">Logout</button></a>
-    <a href="{{ url_for('saves') }}"><button class="top-button">Saves</button></a>
-    <a href="{{ url_for('recs') }}"><button class="top-button active">Recs</button></a>
-    <a href="{{ url_for('blackjack') }}"><button class="top-button">Blackjack</button></a>
+  <div class="recs-container">
+
+  <!-- Relevant Builds Column -->
+  <div class="recs-column">
+    <h2 class="section-heading">Relevant Builds</h2>
+    {% if relevant_builds %}
+      {% for match in relevant_builds %} <!-- Sure it doesn't make too much sense read aloud but I just wanted to copy the other code for matches into relevant builds -->
+        <div class="match-card">
+          <div class="match-title-box">
+            <h3 class="match-title">{{ match.title }}</h3>
+          </div>
+          <iframe class="match-video" src="{{ match.youtube_link }}" frameborder="0" allowfullscreen></iframe>
+          <button class="copy-button" onclick='makeCopy({{ match | tojson | safe }})'>Create a Copy</button>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="no-recs">No relevant builds found in database.</p>
+    {% endif %}
   </div>
 
-  <!-- Recs Main Layout -->
-  <div class="recs-main">
-    <div class="footprint-box">
-      <h2>Found Footprint:</h2>
-    </div>
-
-    <div class="recs-list">
-      <div class="rec-card">
-        <h3>Feature name 1</h3>
-        <div class="rec-preview"></div>
+  <!-- Top Matches Column -->
+  <div class="recs-column">
+    <h2 class="section-heading">Top 5 Matches</h2>
+    {% for match in top_matches %}
+      <div class="match-card">
+        <div class="match-title-box">
+          <h3 class="match-title">{{ match.title }}</h3>
+        </div>
+        <iframe class="match-video" src="{{ match.youtube_link }}" frameborder="0" allowfullscreen></iframe>
+        <button class="copy-button" onclick='makeCopy({{ match | tojson | safe }})'>Create a Copy</button>
       </div>
-
-      <div class="rec-card">
-        <h3>Feature name 2</h3>
-        <div class="rec-preview"></div>
-      </div>
-
-      <div class="rec-card">
-        <h3>Feature name 3</h3>
-        <div class="rec-preview"></div>
-      </div>
-    </div>
+    {% endfor %}
+  </div>
+  
   </div>
 
   <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
-
+  <script src="{{ url_for('static', filename='js/recs.js') }}"></script>
 </body>
 </html>

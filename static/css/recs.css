@@ -1,51 +1,68 @@
-/* Recs page layout */
-.recs-main {
-    display: flex;
-    height: calc(100vh - 70px);
-    background: #1e1e1e;
-    padding: 20px;
-    gap: 20px;
-  }
-  
-  /* Left panel */
-  .footprint-box {
-    background: var(--accent-color);
-    width: 300px;
-    padding: 20px;
-    border-radius: 8px;
-    color: white;
-    font-weight: bold;
-    flex-shrink: 0;
-  }
-  
-  /* Right scrollable feature list */
-  .recs-list {
-    flex: 1;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding-right: 10px;
-  }
-  
-  /* Individual recommendation card */
-  .rec-card {
-    background: #5c2f28;
-    border-radius: 10px;
-    padding: 20px;
-    color: white;
-  }
-  
-  .rec-card h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-  }
-  
-  /* Placeholder for visual preview/content */
-  .rec-preview {
-    background: #dddddd;
-    width: 100%;
-    height: 150px;
-    border-radius: 4px;
-  }
-  
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #1e1e1e;
+    font-family: sans-serif;
+    color: #fff;
+}
+
+.recs-container {
+  display: flex;
+  justify-content: space-around;
+  gap: 30px;
+  flex-wrap: wrap;
+  padding: 20px;
+}
+
+.recs-column {
+  flex: 1;
+  min-width: 45%;
+}
+
+.section-heading {
+  text-align: center;
+  color: white;
+  margin-bottom: 20px;
+}
+
+.match-card {
+  background-color: #3a2423;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 20px;
+}
+
+.match-title-box {
+  background-color: #ce4125;
+  padding: 8px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.match-title {
+  color: white;
+  margin: 0;
+  font-size: 1.2em;
+}
+
+.match-video {
+  width: 100%;
+  height: 315px;
+}
+
+.copy-button {
+  background-color: #ff5f5f;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  margin: 10px auto 0;
+  display: block;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.no-recs {
+  color: white;
+  text-align: center;
+}

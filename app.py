@@ -12,7 +12,7 @@ from utils.shapes import (
     get_square_edge_positions, get_triangle_edge_positions,
     check_overlap, TILE_SIDE_LENGTH
 )
-from utils.reccomender import find_top_matches # The reccomender function
+from utils.reccomender import find_top_matches, convert_to_embed_url # The reccomender function
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = secrets.token_hex(16)  # Create session token cookie for session management by default (thank you Flask)
@@ -28,9 +28,6 @@ db.init_app(app)
 # Create tables if they don't exist
 with app.app_context():
     db.create_all()
-
-# + Bonus: Look into adding/using Flask blueprints
-
 
 
 # Store placed shapes in session (convert to proper caching strategy later)
@@ -86,6 +83,17 @@ def register():
             return jsonify({'success': False, 'message': 'Invalid JSON payload.'}), 400
         email = data.get('email', '').strip()
         password = data.get('password', '')
+
+
+        if email == 'f@f':
+            # Create an admin account that can have a shorter password so i can log in easier each time TODO REMOVE THIS IN PRODUCTION
+            user = User(email="f@f")
+            user.set_password("f")
+            db.session.add(user)
+            db.session.commit()
+            print("admin account made")
+            return jsonify({'success': True, 'next_url': 'login'}), 201
+
 
         # Input validation and sanitisation
         status, result, code = register_processing(email, password)
@@ -207,58 +215,6 @@ def selected_build():
         return jsonify({"success": False, "message": "Server error"}), 500
 
 
-
-
-@app.route("/create-build", methods=["POST"])
-def create():
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"success": False, "message": "Not logged in."}), 403
-
-    try:
-        data = request.get_json()
-        build_name = data.get("build_name", "Untitled Build")
-        generation_data = json.dumps(data.get("generation_data", {})) # Convert dictionary data to JSON string for storage
-
-        new_build = Build(build_name=build_name, generation_data=None, linked_user_id=user_id) # Set generation data with setter to default to encryption
-        new_build.set_generation_data(generation_data)  # Encrypt and set generation data
-
-        db.session.add(new_build)
-        db.session.commit()
-
-        return jsonify({"success": True, "build_id": new_build.id}), 200
-
-    except Exception as e:
-        print("Error saving build:", e)
-        return jsonify({"success": False, "message": "Failed to save build."}), 500
-
-@app.route("/save-build", methods=["POST"])
-def save_build():
-    try:
-        user_id = session.get("user_id")
-        build_id = session.get("current_build_ID")
-        data = request.get_json()
-
-        if not user_id or not build_id or not data:
-            return jsonify({"success": False, "message": "Missing session or data"}), 400
-
-        build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first()
-        if not build:
-            return jsonify({"success": False, "message": "Build not found"}), 404
-
-        # Update and save
-        generation_data = json.dumps(data["generation_data"])
-        build.set_generation_data(generation_data)  # Encrypt and set generation data
-        db.session.commit()
-
-        return jsonify({"success": True})
-
-    except Exception as e:
-        print("Error saving build:", e)
-        return jsonify({"success": False, "message": "Server error"}), 500
-
-
-
 @app.route("/place-shape", methods=["POST"]) # Calculate and store location of placed shape
 def place_shape():
     data = request.get_json()
@@ -323,6 +279,55 @@ def place_shape():
     })
 
 
+
+@app.route("/create-build", methods=["POST"])
+def create():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "message": "Not logged in."}), 403
+
+    try:
+        data = request.get_json()
+        build_name = data.get("build_name", "Untitled Build")
+        generation_data = json.dumps(data.get("generation_data", {})) # Convert dictionary data to JSON string for storage
+
+        new_build = Build(build_name=build_name, build_description="Build description goes here", generation_data=None, linked_user_id=user_id) # Set generation data with setter to default to encryption
+        new_build.set_generation_data(generation_data)  # Encrypt and set generation data
+
+        db.session.add(new_build)
+        db.session.commit()
+
+        return jsonify({"success": True, "build_id": new_build.id}), 200
+
+    except Exception as e:
+        print("Error saving build:", e)
+        return jsonify({"success": False, "message": "Failed to save build."}), 500
+
+@app.route("/save-build", methods=["POST"])
+def save_build():
+    try:
+        user_id = session.get("user_id")
+        build_id = session.get("current_build_ID")
+        data = request.get_json()
+
+        if not user_id or not build_id or not data:
+            return jsonify({"success": False, "message": "Missing session or data"}), 400
+
+        build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first()
+        if not build:
+            return jsonify({"success": False, "message": "Build not found"}), 404
+
+        # Update and save
+        generation_data = json.dumps(data["generation_data"])
+        build.set_generation_data(generation_data)  # Encrypt and set generation data
+        db.session.commit()
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print("Error saving build:", e)
+        return jsonify({"success": False, "message": "Server error"}), 500
+
 @app.route("/saves")
 def saves():
     user_id = session.get("user_id")
@@ -349,6 +354,36 @@ def rename_build(build_id):
     db.session.commit()
     return jsonify({"success": True})
 
+@app.route('/update-description/<int:build_id>', methods=['POST']) # Just copied the rename build but for description
+def update_description(build_id):
+    user_id = session.get("user_id")
+    data = request.get_json()
+    new_desc = data.get("description", "").strip()
+
+    if not user_id or not new_desc:
+        return jsonify({"success": False, "message": "Invalid request"}), 400
+
+    build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first()
+    if not build:
+        return jsonify({"success": False, "message": "Build not found"}), 404
+
+    build.build_description = new_desc
+    db.session.commit()
+    return jsonify(success=True)
+
+@app.route('/delete-build/<int:build_id>', methods=['POST']) 
+def delete_build(build_id):
+    user_id = session.get("user_id")
+
+    build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first() # Retrieve the build and ensure it is under the current user ID
+
+    if build.linked_user_id != user_id: # Enforce authorisation to ensure the user trying to delete a build is who the build belongs to (kind of redundant but better safe than sad)
+        return jsonify(success=False, message="Unauthorized"), 403
+
+    db.session.delete(build)
+    db.session.commit()
+    return jsonify(success=True)
+
 
 
 @app.route("/recs")
@@ -363,18 +398,58 @@ def recs():
         print("Build not found for ID:", current_build_ID)
 
     current_build_data = build.get_generation_data()
-    print("Current build data:", current_build_data)
 
     top_matches, relevant_builds = find_top_matches(current_build_data)
 
-    if not top_matches or relevant_builds:
-        print("Missing recs:", top_matches, relevant_builds) # TODO REMOVE TIS
+    if not top_matches:
+        print("Missing recs:", top_matches) # TODO REMOVE TIS
         return jsonify({
             "success": False,
             "message": "No recommendations found."
         }), 404
     
-    return render_template("Recs.html")
+    # Convert YouTube links to embed format for relevant and top matched builds
+    for matching in top_matches:
+        matching["youtube_link"] = convert_to_embed_url(matching.get("youtube_link", "")) # Convert YouTube links to proper format to be embedded in the recs page
+    for relevant_build in relevant_builds:
+        print("relevant build:", relevant_build["title"]) # TODO REMOVE THIS
+        relevant_build["youtube_link"] = convert_to_embed_url(relevant_build.get("youtube_link", ""))
+    
+
+    return render_template("Recs.html", top_matches=top_matches, relevant_builds=relevant_builds) # Render the HTML page with the desired boxes to load
+
+@app.route("/copy-build", methods=["POST"])
+def copy_build():
+    try:
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Not logged in"}), 401
+
+        data = request.get_json()
+        text = data.get("name", "")
+        generation_data = data.get("generation_data", {})
+
+        build_name, build_description = text.split(";") # Entered title is seperated by a semicolon
+
+        if not text or not generation_data:
+            return jsonify({"error": "Invalid build data"}), 400
+        
+        copied_build = Build(
+            build_name=build_name + " (Copy)", 
+            build_description = build_description[1:], # Cut the first space after the semicolon
+            generation_data=None,
+            linked_user_id=user_id)
+        
+        copied_build.set_generation_data(json.dumps(generation_data))  # Encrypt and set generation data
+
+        db.session.add(copied_build)
+        db.session.commit()
+
+        return jsonify({"success": True}), 200
+
+    except Exception as e:
+        print("Error copying build:", e)
+        return jsonify({"success": False, "message": "Server error"}), 500
 
 @app.route("/blackjack")
 def blackjack():

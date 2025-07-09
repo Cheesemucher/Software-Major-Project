@@ -1,70 +1,189 @@
-/* Saves page styling */
+/* Grid Container */
 .save-cards-container {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding: 30px;
-    gap: 30px;
-    background: var(--primary-bg);
-    height: calc(100vh - 80px);
-    align-items: flex-start;
-  }
-  
-  .save-card {
-    background: #5c2f28; /* darker red-brown tone */
-    border-radius: 12px;
-    width: 220px;
-    height: 280px;
-    padding: 20px;
-    color: white;
-    position: relative;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-  
-  .save-header {
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .edit-button {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  
-  /* Add card style */
-  .add-card {
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .add-button {
-    background: var(--accent-color);
-    color: white;
-    font-size: 40px;
-    width: 80px;
-    height: 80px;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    margin: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .inline-edit {
-    width: 100%;
-    font-size: 16px;
-    padding: 2px 4px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  padding: 24px;
+  justify-items: center;
+}
+
+
+/* Individual Save Card */
+.save-card {
+  background-color: #5a2a24;
+  color: white;
+  border-radius: 12px;
+  width: 300px;
+  height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+
+/* Header Section (Title + Icons) */
+.save-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.save-header-content {
+  background-color: #c0392b;
+  padding: 6px 10px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 93%;
+}
+
+/* Title text inside red box */
+.editable-name {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: white;
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Button icons in title bar */
+.edit-button,
+.icon-button {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: white;
+  cursor: pointer;
+  padding: 4px;
+  transition: transform 0.1s ease;
+}
+
+.edit-button:hover,
+.icon-button:hover {
+  transform: scale(1.1);
+}
+
+.icon-group {
+  display: flex;
+  gap: 6px;
+}
+
+
+/* Description Formatting */
+.build-description,
+.editable-description {
+  margin: 12px 0;
+  white-space: pre-wrap;
+  color: #fff;
+  font-size: 0.95em;
+  text-align: center;
+}
+
+.description-edit {
+  width: 100%;
+  height: 100%;
+  font-size: 1em;
+  background: white;
+  color: black;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  box-sizing: border-box;
+  resize: none;
+  outline: none;
+}
+
+.description-box {
+  background-color: rgba(192, 57, 43, 0.5); /* same orange with 50% opacity */
+  padding: 10px;
+  border-radius: 8px;
+  flex-grow: 0.9; 
+  display: flex;
+  align-items: flex-start;
+}
+
+.description-text {
+  color: white;
+  font-size: 0.95em;
+  line-height: 1.3em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 10; /* Manage overflow (this line is how many lines to display) */
+  -webkit-box-orient: vertical;
+}
+
+
+
+/* Input Fields (Inline edits) */
+input.inline-edit {
+  background-color: white;
+  border: none;
+  padding: 4px 6px;
+  font-size: 1rem;
+  border-radius: 4px;
+  width: 100%;
+}
+
+
+/* Button Styles */
+.load-button,
+.add-button {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background-color: white;
+  color: black;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.load-button:hover,
+.add-button:hover {
+  background-color: #ccc;
+}
+
+
+/* New build card */
+.new-build-card {
+  background-color: transparent;
+  color: white;
+  border: 2px solid rgb(192, 57, 43);
+  border-radius: 12px;
+  width: 300px;
+  height: 260px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+
+
+/* Round red button in the center */
+.new-build-button {
+  background-color: rgb(192, 57, 43);
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.new-build-button:hover {
+  transform: scale(1.1);
+}
+

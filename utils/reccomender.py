@@ -1,6 +1,7 @@
 import csv
 import ast
 import json
+import re
 
 # Helper functions
 def match_tile(tile1, tile2, tolerance=5.0, rotation_tol=40.0):
@@ -33,13 +34,40 @@ def safe_parse(data_str: str) -> dict:
         print(f"TOP! Skipping line due to error: {e}")
         return None
 
+def convert_to_embed_url(youtube_url):
+    if not youtube_url:
+        return ""
+    
+    if "youtube.com/embed/" in youtube_url:
+        return youtube_url  # Already formatted
+
+    video_id = None
+
+    # Match short URLs like youtu.be/VIDEO_ID
+    short_match = re.search(r'youtu\.be/([^?\s]+)', youtube_url)
+    if short_match:
+        video_id = short_match.group(1)
+
+    # Match long URLs like youtube.com/watch?v=VIDEO_ID
+    if not video_id:
+        long_match = re.search(r'v=([^&\s]+)', youtube_url)
+        if long_match:
+            video_id = long_match.group(1)
+
+    if video_id:
+        return f"https://www.youtube.com/embed/{video_id}"
+    else:
+        print("Youtube link unformatted:", youtube_url)
+        return ""
+
+
 
 # Actual build finding function
 def find_top_matches(user_generation_data):
     user_data = safe_parse(user_generation_data)
     if not user_data or "shapes" not in user_data:
         print("Invalid or missing 'shapes' in user data.")
-        return [], []
+        return [], [] # Returns empty lists if data is invalid - could maybe just display a message instead?
 
     user_shapes = user_data["shapes"]
     matches = []
