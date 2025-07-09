@@ -12,7 +12,7 @@ from utils.shapes import (
     get_square_edge_positions, get_triangle_edge_positions,
     check_overlap, TILE_SIDE_LENGTH
 )
-from utils.regressor import *
+from utils.reccomender import find_top_matches # The reccomender function
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = secrets.token_hex(16)  # Create session token cookie for session management by default (thank you Flask)
@@ -184,9 +184,7 @@ def build():
 def selected_build(): 
     try:
         user_id = session.get("user_id")
-        print("Current user logged in: ", user_id)
         build_id = session.get("current_build_ID")
-        print("Current build ID:", build_id)
 
         if not user_id or not build_id:
             return jsonify({"success": False, "message": "Session data missing"}), 400
@@ -355,16 +353,28 @@ def rename_build(build_id):
 
 @app.route("/recs")
 def recs():
-    return render_template("Recs.html")
+    user_id = session.get("user_id")
+    current_build_ID = session.get("current_build_ID")
+    if not user_id or not current_build_ID:
+        print("IDs not found in session:", user_id, current_build_ID)
 
-@app.route("/example-rec")
-def example_rec():
-    build_dataset = load_build_dataset_from_csv("utils/meta_builds.csv")
-    current_build = session.get("current_build_ID")
-    model = train_model(build_dataset)
+    build = Build.query.filter_by(id=current_build_ID, linked_user_id=user_id).first()
+    if not build:
+        print("Build not found for ID:", current_build_ID)
 
-    print(predict_next_tile(model, build_dataset[0]["shapes"], current_build)) # Predict next tile based on the first build in the dataset
+    current_build_data = build.get_generation_data()
+    print("Current build data:", current_build_data)
+
+    top_matches, relevant_builds = find_top_matches(current_build_data)
+
+    if not top_matches or relevant_builds:
+        print("Missing recs:", top_matches, relevant_builds) # TODO REMOVE TIS
+        return jsonify({
+            "success": False,
+            "message": "No recommendations found."
+        }), 404
     
+    return render_template("Recs.html")
 
 @app.route("/blackjack")
 def blackjack():
