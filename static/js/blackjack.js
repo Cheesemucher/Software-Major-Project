@@ -8,6 +8,7 @@ let dealerFaceDownCard = null; // This will hold the dealer's face down card ele
 let gameState = {
   bet: 0,
   gameActive: false,
+  multiplier: 1,
   playerMinTotal: 0, // Create a running minimum total for the player to calculate a bust before involving backend logic
 }
 
@@ -22,6 +23,22 @@ function drawCard() {
   card = cardNum.toString(); // Convert card number to string to stay consistent
   return card; // Return the card value for backend logic processing
 }
+
+function findBlackjack(card1, card2) { // Just checks if starting hands add to 21 to call blackjack, copilot autofilled the function so if it doesnt work come back to this
+  // Convert a card value to its numerical Blackjack value
+  function getCardValue(card) {
+    if (card === 'A') return 11;
+    if (['K', 'Q', 'J'].includes(card)) return 10;
+    const num = Number(card);
+    return isNaN(num) ? 0 : num;
+  }
+
+  const val1 = getCardValue(card1);
+  const val2 = getCardValue(card2);
+
+  return val1 + val2 === 21;
+}
+
 
 function findCardSrc(card){ // Card will just be a single character representing the card value/type
   // Generate a random suite (imagine theres like 10 decks, don't bother with card counting)
@@ -46,6 +63,60 @@ function renderCard(src, side) { // src is desired image src, side can be 'playe
   hand.appendChild(cardImg);
 }
 
+function updateUIStats() {
+  const multiplierElem = document.getElementById("multiplier");
+  const potElem = document.getElementById("pot");
+  const balanceElem = document.getElementById("player-balance");
+
+  if (multiplierElem) multiplierElem.textContent = `x${gameState.multiplier} multiplier`;
+  if (potElem) potElem.textContent = `Pot: ${gameState.bet} Scrap`;
+  if (balanceElem) balanceElem.textContent = `Balance: ${playerBalance} Scrap`;
+}
+
+function endGame(){
+  gameState.multiplier = 1
+  gameState.bet = 0
+  gameState.gameActive = false
+  updateUIStats()
+  playerHand = []
+  dealerHand = []
+  dealerFaceDownCard = null
+}
+
+function clearHands() {
+  document.getElementById("dealer-hand").innerHTML = "";
+  document.getElementById("player-hand").innerHTML = "";
+}
+
+function updateTotal(cardNum) {
+  if (cardNum === 'A') {
+    gameState.playerMinTotal += 1; } // Count Ace as 1 for the running minimum total
+  else if ((cardNum === 'J') || (cardNum === 'Q') || (cardNum === 'K')) {
+    gameState.playerMinTotal += 10;}
+  else {
+    gameState.playerMinTotal += Number(cardNum); // Add the card number to the player's minimum total
+  }
+
+  // Check for bust
+  if (gameState.playerMinTotal > 21) {
+    console.log("Bust")
+    //alert("You busted! Dealer wins."); // Add an animation here for a bust
+    showGameMessage("Bust!", "#FF4E4E"); // Show bust animation
+
+    playerBalance -= gameState.multiplier * gameState.bet; // Deduct the bet from player balance
+    endGame()
+  }
+  
+}
+// Just allow pauses between card reveals for suspense
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+
+
+// Actual game functionality
 function hit() {
   if (!gameState.gameActive) {
     alert("Please start a new round first.");
@@ -59,41 +130,62 @@ function hit() {
   updateTotal(card); // Update the player's minimum total with the new card
 }
 
+async function stand() {
+  if (!gameState.gameActive) {
+    alert("Please start a new round first.");
+    return;
+  }
 
-function stand() {
   // First flip the dealer card
   flipDealerCard(dealerFaceDownCard);
 
-  // Use a fetch to the python to handle all the logic for the actual game once player actions are resolved
-}
+  // Wait a bit, let reader shiver in their timbers
+  await sleep(1000)
 
-function clearHands() {
-  document.getElementById("dealer-hand").innerHTML = "";
-  document.getElementById("player-hand").innerHTML = "";
-}
+  // Deal dealer and resolve game
+  const response = await fetch('/blackjack/resolve-game', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': getCookie('csrf_token'),
+    },
+    body: JSON.stringify({
+      playerHand: playerHand,
+      dealerHand: dealerHand,
+    }),
+  });
 
-function updateTotal(cardNum) {
-  console.log("total before update: ", gameState.playerMinTotal);
-  if (cardNum === 'A') {
-    gameState.playerMinTotal += 1; } // Count Ace as 1 for the running minimum total
-  else if ((cardNum === 'J') || (cardNum === 'Q') || (cardNum === 'K')) {
-    gameState.playerMinTotal += 10;}
-  else {
-    gameState.playerMinTotal += Number(cardNum); // Add the card number to the player's minimum total
+  const data = await response.json();
+
+  const result = data.result;
+  const dealerCards = data.dealer_cards;
+  console.log(dealerCards)
+
+  // Render dealer cards
+  dealerCards.forEach(card => {
+    renderCard(findCardSrc(card), "dealer");
+    });
+
+  // Handle game result
+  switch (result) {
+    case "Player Wins":
+      showGameMessage("You win!", "#4EFF89"); // green
+      playerBalance += gameState.multiplier * gameState.bet;
+      break;
+    case "Dealer Wins":
+      showGameMessage("Dealer wins.", "#FF4E4E"); // red
+      playerBalance -= gameState.multiplier * gameState.bet;
+      break;
+    case "Dealer Busts":
+      showGameMessage("Dealer busts! You win!", "#4EFF89"); // yellow
+      playerBalance += gameState.multiplier * gameState.bet;
+      break;
+    case "Push":
+      showGameMessage("Push", "#FFD64E");
+      break;
   }
-  console.log("total after update: ", gameState.playerMinTotal);
-
-  // Check for bust
-  if (gameState.playerMinTotal > 21) {
-    console.log("Bust")
-    //alert("You busted! Dealer wins."); // Add an animation here for a bust
-    showBustAnimation(); // Show bust animation
-
-    gameState.gameActive = false; // End the game
-    playerBalance -= bet; // Deduct the bet from player balance
-    return "bust"; // Return bust result
-  }
-  
+  // End round stuff
+  endGame()
 }
 
 function startNewRound() {
@@ -106,7 +198,7 @@ function startNewRound() {
   }
 
   if (bet > playerBalance) {
-    alert(`You only have $${playerBalance}. Please enter a valid bet.`);
+    alert(`You only have ${playerBalance} scrap. Please enter a valid bet.`);
     return;
   }
 
@@ -118,6 +210,8 @@ function startNewRound() {
   gameState.playerMinTotal = 0; // Reset the running player total
   gameState.bet = bet; // Set the bet amount in the game state
   gameState.gameActive = true // Set the game state to true
+
+  updateUIStats()
 
   
   clearHands(); // Clear previous hands
@@ -143,35 +237,55 @@ function startNewRound() {
   dealerHand.push(dealerCard2);
   dealerFaceDownCard = renderCardFaceDown(findCardSrc(dealerCard2), "dealer-hand"); // Render the second dealer card face down
 
-}
 
-function getBalanceChange(result, bet) {
-  switch (result) {
-    case "blackjack":
-    case "player_wins":
-    case "dealer_bust":
-      return bet;
-    case "dealer_blackjack":
-    case "dealer_wins":
-    case "bust":
-      return -bet;
-    default:
-      return 0;
+
+  playerBJ = findBlackjack(playerCard1, playerCard2)
+  dealerBJ = findBlackjack(dealerCard1, dealerCard2)
+  // Resolve game immediately if someone has a blackjack
+  if (playerBJ && dealerBJ) {
+    flipDealerCard(dealerFaceDownCard);
+    showGameMessage("DOUBLE BLACKJACK! Upping the stakes...", "#FFD64E")
+    gameState.gameActive = false
+    gameState.multiplier = 2
+    gameState.bet = 0
+    updateUIStats()
+  }
+
+  else if (playerBJ){
+    console.log("Player Blackjack!")
+    flipDealerCard(dealerFaceDownCard);
+    showGameMessage("Blackjack! You Win!", "#4EFF89")
+
+    playerBalance += gameState.multiplier * Math.ceil(1.5 * gameState.bet); // Rounded 3:2 payout for getting blackjack
+    endGame()
+  }
+
+  else if (dealerBJ){
+    console.log("Dealer Blackjack!")
+    flipDealerCard(dealerFaceDownCard)
+    showGameMessage("Dealer Blackjack!", "#FF4E4E")
+
+    playerBalance -= gameState.multiplier * gameState.bet; // Still lose normal amount apparently
+    endGame()
   }
 }
 
 
 // Animations
-function showBustAnimation() { // This is magnificient trust
-  const bust = document.getElementById("bust-animation");
+function showGameMessage(message, color) { 
+  const bust = document.getElementById("bust-animation"); // Repurposed the 'bust' animation so all the variables are still called bust - this function is used for all game messages however
+  bust.textContent = message;
+  bust.style.color = color;
+
   bust.classList.remove("bust-hidden");
   bust.classList.add("bust-visible");
 
   setTimeout(() => {
     bust.classList.remove("bust-visible");
     bust.classList.add("bust-hidden");
-  }, 1600); // Match the duration of the animation
+  }, 1600);
 }
+
 
 // Card flipping
 function renderCardFaceDown(realSrc, containerId) {
