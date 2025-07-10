@@ -12,6 +12,7 @@ from utils.shapes import (
     get_square_edge_positions, get_triangle_edge_positions,
     check_overlap, TILE_SIDE_LENGTH
 )
+from blackjack import getTotal, deal_dealer # Import blackjack functions to use in the blackjack game
 from utils.reccomender import find_top_matches, convert_to_embed_url # The reccomender function
 
 app = Flask(__name__)
@@ -465,6 +466,33 @@ def getBID(): # Returns current build ID stored in the session
 @app.route("/blackjack")
 def blackjack():
     return render_template("Blackjack.html")
+
+@app.route("/blackjack/resolve-game", methods=["POST"])
+def resolveGame():
+    try:
+        data = request.get_json()
+        player_cards = data.get("playerHand", [])
+        dealer_cards = data.get("dealerHand", [])
+        print(player_cards)
+        print(dealer_cards)
+
+        if not player_cards or not dealer_cards:
+            return jsonify({"success": False, "message": "Invalid game state"}), 400
+
+        playerTotal = getTotal(player_cards)
+
+        dealer_cards, result = deal_dealer(dealer_cards[0], dealer_cards[1], playerTotal) # Deal the dealer cards and get the result of the game
+        dealer_cards = dealer_cards[2:] # Cut off the first two cards as those are already generated
+
+        return jsonify({
+            "success": True,
+            "dealer_cards": dealer_cards,
+            "result": result
+        }), 200
+
+    except Exception as e:
+        print("Error resolving game:", e)
+        return jsonify({"success": False, "message": "Server error"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True,port=5000)

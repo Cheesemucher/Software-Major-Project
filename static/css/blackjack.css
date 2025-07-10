@@ -228,12 +228,19 @@ body, html {
   height: 100%;
   position: relative;
   transform-style: preserve-3d;
-  transition: transform 0.8s ease;
+  transition: transform 0.3s ease;
   aspect-ratio: 1 / 1.4; /* For card shape */
 }
 
 .flip-card.flip .flip-inner {
   transform: rotateY(180deg);
+}
+.flip-card:hover .flip-inner {
+  transform: scale(1.05) rotateY(180deg); /* if flipped */
+}
+
+.flip-card:not(.flip):hover .flip-inner {
+  transform: scale(1.05); /* if not yet flipped */
 }
 
 .card-face {
