@@ -129,6 +129,7 @@ body, html {
 
 .bj-pot {
   font-weight: bold;
+  white-space: nowrap; /* optional, to prevent wrapping */
 }
 
 /* Buttons */

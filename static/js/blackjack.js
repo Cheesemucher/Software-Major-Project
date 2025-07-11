@@ -69,7 +69,12 @@ function updateUIStats() {
   const balanceElem = document.getElementById("player-balance");
 
   if (multiplierElem) multiplierElem.textContent = `x${gameState.multiplier} multiplier`;
-  if (potElem) potElem.textContent = `Pot: ${gameState.bet} Scrap`;
+  if (!potElem) {
+  console.log("Pot element not found in DOM!");
+} else {
+  console.log("pot found but text not working")
+  potElem.textContent = `Pot: ${gameState.bet} Scrap`;
+}
   if (balanceElem) balanceElem.textContent = `Balance: ${playerBalance} Scrap`;
 }
 
@@ -161,10 +166,11 @@ async function stand() {
   const dealerCards = data.dealer_cards;
   console.log(dealerCards)
 
-  // Render dealer cards
-  dealerCards.forEach(card => {
+  // Render dealer cards, turns out there is an actual for loop the copilot autofill had me using forEach the whole time
+  for (const card of dealerCards) {
     renderCard(findCardSrc(card), "dealer");
-    });
+    await sleep(1000); // Wait 1 second before showing next card
+  }
 
   // Handle game result
   switch (result) {
@@ -177,15 +183,43 @@ async function stand() {
       playerBalance -= gameState.multiplier * gameState.bet;
       break;
     case "Dealer Busts":
-      showGameMessage("Dealer busts! You win!", "#4EFF89"); // yellow
+      showGameMessage("Dealer busts!", "#4EFF89"); 
       playerBalance += gameState.multiplier * gameState.bet;
       break;
     case "Push":
-      showGameMessage("Push", "#FFD64E");
+      showGameMessage("Push", "#FFD64E"); // yellow
       break;
   }
   // End round stuff
   endGame()
+}
+
+function doubleDown() {
+  if (!gameState.gameActive) {
+    alert("Please start a new round first.");
+    return;
+  }
+
+  if (playerHand.length !== 2) {
+    alert("You can only double down on your starting hand.");
+    return;
+  }
+
+  // Check if the player has enough balance to double down
+  if (playerBalance < 2 * gameState.bet) {
+    alert("Not enough balance to double down.");
+    return;
+  }
+
+  // Update the multiplier
+  gameState.multiplier = 2
+  updateUIStats();
+
+  // Deal one card to the player
+  hit()
+
+  // Force stand immediately after one card
+  stand();
 }
 
 function startNewRound() {
