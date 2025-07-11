@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            //'X-CSRF-Token': getCookie('csrf_token'), 
+            // No need for CSRF token on registeration
           },
           credentials: 'include',
           body: JSON.stringify(payload),
@@ -86,13 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
             messageDiv.textContent = 'Registration successful! Redirecting to login...';
           }
           const nextUrl = data.next_url || '/login';
-          setTimeout(() => {
-            if (nextUrl && nextUrl.startsWith("/") && !nextUrl.startsWith("//")) {
-              window.location.href = nextUrl;
-            } else {
-              window.location.href = "/"; // Default to dashboard in case of redirection to external URL
-            }
-          }, 1000);
+          if (nextUrl && nextUrl.startsWith("/") && !nextUrl.startsWith("//")) {
+            window.location.href = nextUrl;
+          } else {
+            window.location.href = "/"; // Default to dashboard in case of redirection to external URL
+          }
         } else {
           // Backend JSON indicates failure
           const msg = data && data.message ? data.message : 'Registration failed.';

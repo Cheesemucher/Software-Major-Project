@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Build</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/build.css') }}">
+  <link id="build-style" rel="stylesheet" href="{{ url_for('static', filename='css/build.css') }}">
 </head>
 <body>
 
@@ -40,6 +40,48 @@
       <!-- Generated tile and plus button elements will be inserted here in the actual program -->
     </div>
   </div>
+
+
+  <!-- Hidden Settings Menu -->
+  <div id="settingsPopup" class="settings-popup">
+    <h3>Settings</h3>
+    
+    <label>
+      <input type="checkbox" id="showButtonsCheckbox" checked>
+      Show Buttons
+    </label>
+
+    <div class="color-setting">
+      <label for="squareColor">Square Colour:</label>
+      <input type="color" id="squareColor" value="#e26a4a"> <!--this spelling of colour pains me but thats what css reads so Ill trust the copilot autofill thing for now-->
+    </div>
+
+    <div class="color-setting">
+      <label for="triangleColor">Triangle Colour:</label>
+      <input type="color" id="triangleColor" value="#e26a4a">
+    </div>
+
+    <div class="color-setting">
+      <label for="deleteColor">Delete Button Colour:</label>
+      <input type="color" id="deleteColor" value="#ff8400">
+    </div>
+
+    <div class="slider-setting">
+      <label for="plusSize">Resize Plus Button:</label>
+      <input type="range" id="plusSize" min="10" max="80" value="30">
+    </div>
+
+    <div class="slider-setting">
+      <label for="deleteSize">Resize Delete Button:</label>
+      <input type="range" id="deleteSize" min="10" max="80" value="30">
+    </div>
+
+
+    <button onclick="applySettingChanges()">Apply Changes</button>
+
+    <button onclick="resetSettings()" style="margin-left: 8px;">Reset to Defaults</button>
+
+</div>
 
   <script src="https://unpkg.com/@panzoom/panzoom/dist/panzoom.min.js"></script>
   <script src="{{ url_for('static', filename='js/utils.js') }}"></script>

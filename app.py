@@ -113,7 +113,7 @@ def register():
             return jsonify({'success': False, 'message': 'Email already registered.'}), 409
 
         # Create user
-        user = User(email=normalized_email)
+        user = User(email=normalized_email, password_hash=None, visual_settings=json.dumps({"squareColour": "#e26a4a", "triangleColour": "#e26a4a", "deleteButtonColour": "#ff8400", "plusSize": "30", "deleteSize": "22"}), blackjack_balance=1000)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
@@ -203,11 +203,14 @@ def selected_build():
             return jsonify({"success": False, "message": "Build not found"}), 404
 
         print("Selected build:", build_id)
-        print("Build generation data:", build.get_generation_data())
+
+        user = User.query.filter_by(id=user_id).first()
+        user_prefs = user.visual_settings
 
         return jsonify({
         "success": True,
-        "generation_data": json.loads(build.get_generation_data()) # Encode it into a dict as it needs to be that way to be used by the frontend
+        "generation_data": json.loads(build.get_generation_data()),
+        "user_preferences": json.loads(user_prefs or "{}") # Visual settings field set to None on initialisation of a new user
         })
 
 
@@ -278,6 +281,32 @@ def place_shape():
         "placed": [new_shape],
         "plus_points": filtered_plus_signs
     })
+
+@app.route("/store-settings", methods=["POST"])
+def store():
+    try:
+        user_id = session.get("user_id")
+        data = request.get_json()
+        preferences = json.dumps(data) # The user preferred settings as a python dict
+
+        if not user_id or not data:
+            return jsonify({"success": False, "message": "Missing session or data"}), 400
+
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            return jsonify({"success": False, "message": "User not found"}), 404
+
+        print("saved visual settings:", preferences)
+
+        # Save new settings as JSON string
+        user.visual_settings = preferences
+        db.session.commit()
+
+        return jsonify({"success": True})
+    
+    except Exception as e:
+        print("Error saving visual settings:", e)
+        return jsonify({"success": False, "message": "Server error"}), 500
 
 
 
@@ -466,6 +495,47 @@ def getBID(): # Returns current build ID stored in the session
 @app.route("/blackjack")
 def blackjack():
     return render_template("Blackjack.html")
+
+@app.route("/get-player-balance", methods=["GET"])
+def get_balance():
+    try:
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"success": False, "message": "Not logged in"}), 403
+
+        user = User.query.filter_by(id=user_id).first()
+        balance = user.blackjack_balance
+        print(balance)
+        if not user or not balance:
+            return jsonify({"success": False, "message": "Error finding user or balance"})
+        
+        return jsonify({"success": True, "balance": balance}), 200
+        
+    except Exception as e:
+        print("Error getting user balance:", e)
+        return jsonify({"success": False, "message": "Server error"}), 500
+    
+@app.route("/update-player-balance", methods=["POST"])
+def update_balance():
+    try:
+        data = request.get_json()
+        new_bal = data.get("new_balance") # Lmao the shoe company
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"success": False, "message": "Not logged in"}), 403
+
+        user = User.query.filter_by(id=user_id).first()
+        if not user or not new_bal:
+            return jsonify({"success": False, "message": "Error finding user or balance"})
+        
+        user.blackjack_balance = new_bal
+        db.session.commit()
+        
+        return jsonify({"success": True}), 200
+        
+    except Exception as e:
+        print("Error getting user balance:", e)
+        return jsonify({"success": False, "message": "Server error"}), 500
 
 @app.route("/blackjack/resolve-game", methods=["POST"])
 def resolveGame():
