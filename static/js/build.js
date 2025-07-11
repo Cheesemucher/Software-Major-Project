@@ -3,6 +3,16 @@ let floorCount = 1;
 const TILE_SIDE_LENGTH = 80;
 let placedShapes = [];
 
+const defaultSettings = {
+  showButtons: true,
+  squareColor: "#e26a4a",
+  triangleColor: "#e26a4a",
+  deleteButtonColor: "#ff8400",
+  plusSize: 30,
+  deleteSize: 30
+};
+
+
 /*
 // Floor menu stuff
 function addFloor() {
@@ -501,9 +511,132 @@ async function openRecs() {
 function openSettings() {
   // TODO: Make settings page with colourblind option or something and button size changing stuff
   console.log("Settings clicked");
+  
+  document.getElementById('settingsPopup').classList.toggle('open')
+
 }
 
+function toggleButtons(show) { // Called when the event listener detects the checkbox for toggling buttons is clicked
+  const deleteButtons = document.querySelectorAll(".delete-button");
+  const plusButtons = document.querySelectorAll(".plus-button");
 
+  deleteButtons.forEach(btn => { // Hide all delete buttons
+    btn.style.display = show ? "flex" : "none";
+  });
+
+  plusButtons.forEach(btn => { // Hide all plus buttons in the same way
+    btn.style.display = show ? "flex" : "none";
+  });
+}
+
+function applySettingChanges() { 
+
+  // Colour changes
+  const squareColour = document.getElementById("squareColor").value; // Alter the CSS for the shapes to modify colours
+  const triangleColour = document.getElementById("triangleColor").value;
+  const deleteButtonColour = document.getElementById("deleteColor").value;
+
+  updateBuildColours(squareColour, triangleColour, deleteButtonColour);
+
+
+  // Button size changes
+  const plusSize = document.getElementById("plusSize").value + "px";
+  const deleteSize = document.getElementById("deleteSize").value + "px";
+
+    // Resize plus buttons
+  const plusButtons = document.querySelectorAll(".plus-button");
+  console.log("plus buttons being resized to", plusSize)
+  plusButtons.forEach(btn => {
+    btn.style.width = plusSize;
+    btn.style.height = plusSize;
+    btn.style.fontSize = (parseInt(plusSize) / 2) + "px"; // Adjust font size
+  });
+
+    // Resize delete buttons
+  const deleteButtons = document.querySelectorAll(".delete-button");
+  console.log("d buttons being resized to", deleteSize)
+  deleteButtons.forEach(btn => {
+    btn.style.width = deleteSize;
+    btn.style.height = deleteSize;
+    btn.style.fontSize = (parseInt(deleteSize) / 2) + "px"; // Adjust font size
+  });
+
+  // Update db with new user settings preferences
+  fetch("/store-settings", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      'X-CSRF-Token': getCookie('csrf_token'),
+    },
+    body: JSON.stringify({
+      squareColour: squareColour,
+      triangleColour: triangleColour,
+      deleteButtonColour: deleteButtonColour,
+      plusSize: document.getElementById("plusSize").value, // Can't just use the variable as the px shouldn't be stored
+      deleteSize: document.getElementById("deleteSize").value
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      console.log("Settings saved.");
+    } else {
+      console.error("Failed to save settings:", data.message);
+    }
+  })
+  .catch(err => {
+    console.error("Request error:", err);
+  });
+}
+
+function updateBuildColours(squareColour, triangleColour, deleteButtonColour) { // Helper function to change the CSS styling for tile and delete button to recolour them based on user preference
+  const buildSheet = [...document.styleSheets].find(s => 
+    s.href && s.href.includes("css/build.css")
+  ); // Find the right css style sheet (Not sure if there is a better way this is what copilot suggested)
+
+  if (!buildSheet) {
+    console.warn("css file not found.");
+    return;
+  }
+
+  try {
+    for (const rule of buildSheet.cssRules) {
+      if (rule.selectorText === '.tile-square') {
+        rule.style.background = squareColour;
+      }
+      if (rule.selectorText === '.tile-triangle') {
+        rule.style.borderBottomColor = triangleColour;
+      }
+      if (rule.selectorText === '.delete-button') {
+        rule.style.background = deleteButtonColour;
+      }
+      if (rule.selectorText === '.delete-button:hover') {
+        rule.style.background = deleteButtonColour;
+      }
+    }
+  } catch (e) {
+    console.error("Could not modify style:", e);
+  }
+}
+
+function resetSettings() {
+  // Reset color pickers
+  document.getElementById("squareColor").value = defaultSettings.squareColor;
+  document.getElementById("triangleColor").value = defaultSettings.triangleColor;
+  document.getElementById("deleteColor").value = defaultSettings.deleteButtonColor;
+
+  // Reset sliders
+  document.getElementById("plusSize").value = defaultSettings.plusSize;
+  document.getElementById("deleteSize").value = defaultSettings.deleteSize;
+
+  // Apply those defaults visually too
+  applySettingChanges();
+}
+
+// Called when checkbox changes (When user clicks toggleButtons checkbox in menu)
+  document.getElementById("showButtonsCheckbox").addEventListener("change", (e) => {
+    toggleButtons(e.target.checked);
+  });
 
 // Called on page load
 window.addEventListener('DOMContentLoaded', async () => {
@@ -527,6 +660,21 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     renderBuild(result.generation_data); // Render the build with desired data upon page load
+
+    // Load user custom setting styles
+     if (result.user_preferences) {
+      const settings = result.user_preferences
+      console.log(settings)
+      document.getElementById("squareColor").value = settings.squareColour;
+      document.getElementById("triangleColor").value = settings.triangleColour;
+      document.getElementById("deleteColor").value = settings.deleteButtonColour;
+      document.getElementById("plusSize").value = settings.plusSize;
+      document.getElementById("deleteSize").value = settings.deleteSize;
+
+      // Apply visual settings to CSS styles before rendering build (and save again but thats fine)
+      applySettingChanges();
+    }
+
   } catch (error) {
     console.error("Error fetching build data:", error);
   }

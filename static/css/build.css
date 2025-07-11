@@ -196,3 +196,42 @@ body {
   .delete-button:active {
     background: rgba(255, 132, 0, 1);
   }
+
+
+/* Settings menu styling */
+.settings-popup {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  background: #443e3e;
+  border: 1px solid #ccc;
+  padding: 16px;
+  border-radius: 8px;
+  display: none;
+  z-index: 100;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+.settings-popup.open {
+  display: block;
+}
+
+.settings-popup label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 500;
+}
+
+.color-setting {
+  margin-top: 8px;
+}
+
+.settings-popup button {
+  margin-top: 16px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.slider-setting {
+  margin-top: 10px;
+}

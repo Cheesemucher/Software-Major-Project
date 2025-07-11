@@ -6,7 +6,7 @@ from cryptography.fernet import Fernet
 
 db = SQLAlchemy()
 
-key = b'ZpFP_-UuAaK6yU_Sdy5byX6Ax1PX3KQqJkTvuKpZlEA=' # Constant, hardcoded encryption key for testing pruposes
+key = b'ZpFP_-UuAaK6yU_Sdy5byX6Ax1PX3KQqJkTvuKpZlEA=' # Constant, hardcoded encryption key for testing pruposes (can be properly stored as an env key after the assignment is marked)
 fernet = Fernet(key) # Encruption key for generation data
 
 class User(db.Model):
@@ -14,9 +14,11 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    visual_settings = db.Column(db.String(255), nullable=True)
+    blackjack_balance = db.Column(db.Integer, nullable=True)
 
     # Relationship to Build
-    builds = db.relationship('Build', backref='user', lazy=True, cascade='all, delete-orphan')
+    builds = db.relationship('Build', backref='user', lazy=True, cascade='all, delete-orphan') # RIP orphan ;-;
 
 
     def set_password(self, plain_password: str):

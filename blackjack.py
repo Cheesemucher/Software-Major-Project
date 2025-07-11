@@ -34,19 +34,24 @@ def getTotal(playerCards:list) -> int:
 def deal_dealer(dcard1:str, dcard2:str, playerTotal)-> tuple: # Return each card the dealer got then the result of the game
     dealerCards = [dcard1, dcard2] # Each item in list should be a string of 1 character
     dTotal = getTotal(dealerCards)
+
+    aceCount = 0
+    poppedAces = 0 # The aces are like the minecraft totem of undying so we need to count how many of them the dealer popped already to compare with how many he has
+
     
-    while dTotal < 19 and dTotal < playerTotal:
+    while dTotal < playerTotal: # Dealer doesn't stop hitting until his score beats the player -> This is a much harder ruling than normal blackjack good luck playtesters you get 1k moneys anyway
         newCard, dCardValue = dealCard() # newCard is the card to visually generate, dhitcard is the value of the card
         dealerCards.append(newCard)
         print("Dealer got:", newCard)
 
-        poppedAces = 0 # The aces are like the minecraft totem of undying so we need to count how many of them the dealer popped already to compare with how many he has
+        if newCard.startswith('A'):
+            aceCount += 1 # Count how many aces the dealer has
 
         dTotal += dCardValue
 
         if dTotal >= 22:
 
-            if 'A' in dealerCards and poppedAces < dealerCards.count('A'): # If the dealer had an Ace, subtract 10 from the total to change its value to 1
+            if poppedAces < dealerCards.count('A'): # If the dealer had an Ace, subtract 10 from the total to change its value to 1
                 poppedAces += 1
                 dTotal -= 10
 

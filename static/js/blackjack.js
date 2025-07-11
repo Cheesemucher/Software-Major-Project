@@ -1,5 +1,5 @@
 
-let playerBalance = 1000;
+let playerBalance = null; // Initialise empty value to set with a fetch request that gets user balance
 
 let playerHand = [];
 let dealerHand = [];
@@ -63,6 +63,30 @@ function renderCard(src, side) { // src is desired image src, side can be 'playe
   hand.appendChild(cardImg);
 }
 
+async function updateUserBalance() { // Updates the remote user balance in the database
+  try {
+    const res = await fetch('/update-player-balance', { // Retrieve the selected build data from the server upon page load
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': getCookie('csrf_token'),
+      },
+      body: JSON.stringify({
+        new_balance: playerBalance // Lmao the shoe company (sorry i already made that joke on the backend)
+      })
+    });
+
+    const result = await res.json();
+    if (!result.success) {
+      console.error("Failed to update:", result.message);
+      return;
+    }
+
+  } catch (error) {
+    console.error("Error updating player balance:", error);
+  }
+}
+
 function updateUIStats() {
   const multiplierElem = document.getElementById("multiplier");
   const potElem = document.getElementById("pot");
@@ -70,12 +94,11 @@ function updateUIStats() {
 
   if (multiplierElem) multiplierElem.textContent = `x${gameState.multiplier} multiplier`;
   if (!potElem) {
-  console.log("Pot element not found in DOM!");
 } else {
-  console.log("pot found but text not working")
   potElem.textContent = `Pot: ${gameState.bet} Scrap`;
 }
   if (balanceElem) balanceElem.textContent = `Balance: ${playerBalance} Scrap`;
+  updateUserBalance() // Update the user balance in the database so they can cry as their life savings get gambled away
 }
 
 function endGame(){
@@ -106,10 +129,12 @@ function updateTotal(cardNum) {
   if (gameState.playerMinTotal > 21) {
     console.log("Bust")
     //alert("You busted! Dealer wins."); // Add an animation here for a bust
+    flipDealerCard(dealerFaceDownCard)
     showGameMessage("Bust!", "#FF4E4E"); // Show bust animation
 
     playerBalance -= gameState.multiplier * gameState.bet; // Deduct the bet from player balance
-    endGame()
+    endGame();
+    return;
   }
   
 }
@@ -144,9 +169,6 @@ async function stand() {
   // First flip the dealer card
   flipDealerCard(dealerFaceDownCard);
 
-  // Wait a bit, let reader shiver in their timbers
-  await sleep(1000)
-
   // Deal dealer and resolve game
   const response = await fetch('/blackjack/resolve-game', {
     method: 'POST',
@@ -168,23 +190,25 @@ async function stand() {
 
   // Render dealer cards, turns out there is an actual for loop the copilot autofill had me using forEach the whole time
   for (const card of dealerCards) {
+    // Wait a bit, let reader shiver in their timbers
+    await sleep(2000)
+
     renderCard(findCardSrc(card), "dealer");
-    await sleep(1000); // Wait 1 second before showing next card
   }
 
   // Handle game result
   switch (result) {
     case "Player Wins":
       showGameMessage("You win!", "#4EFF89"); // green
-      playerBalance += gameState.multiplier * gameState.bet;
+      playerBalance += parseInt(gameState.multiplier) * parseInt(gameState.bet);
       break;
     case "Dealer Wins":
       showGameMessage("Dealer wins.", "#FF4E4E"); // red
-      playerBalance -= gameState.multiplier * gameState.bet;
+      playerBalance -= parseInt(gameState.multiplier) * parseInt(gameState.bet);
       break;
     case "Dealer Busts":
       showGameMessage("Dealer busts!", "#4EFF89"); 
-      playerBalance += gameState.multiplier * gameState.bet;
+      playerBalance += parseInt(gameState.multiplier) * parseInt(gameState.bet);
       break;
     case "Push":
       showGameMessage("Push", "#FFD64E"); // yellow
@@ -218,9 +242,9 @@ function doubleDown() {
   // Deal one card to the player
   hit()
 
-  // Force stand immediately after one card
-  stand();
-}
+  if (gameState.gameActive) { // Force stand immediately after one card if player survived the hit
+    stand();}
+  }
 
 function startNewRound() {
   const betInput = document.getElementById("bet-amount-input");
@@ -303,6 +327,31 @@ function startNewRound() {
     endGame()
   }
 }
+
+async function loadUserBalance() {
+  try {
+    const res = await fetch("/get-player-balance");
+    const result = await res.json();
+
+    if (!result.success) {
+      console.error("Failed to get balance:", result.message);
+      return;
+    }
+    console.log("Balance on page load:",result.balance)
+    playerBalance = parseInt(result.balance); // In case balance is not an int
+
+    updateUIStats(); 
+
+  } catch (err) {
+    console.error("Error fetching user balance:", err);
+  }
+}
+
+window.addEventListener("DOMContentLoaded", () => { // Get balance as DOM loads
+  loadUserBalance(); // Gets user balance and sets it as the playerBalance var (then updates UI)
+});
+
+
 
 
 // Animations
