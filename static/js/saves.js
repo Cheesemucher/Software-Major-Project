@@ -65,6 +65,7 @@ function editDescription(buildId) {
 }
 
 async function submitDescription(buildId, newDesc) {
+  console.log(newDesc);
   if (!newDesc.trim()) return;
 
   const res = await fetch(`/update-description/${buildId}`, {
@@ -78,13 +79,16 @@ async function submitDescription(buildId, newDesc) {
 
   const result = await res.json();
 
-  const textarea = document.querySelector(`textarea.description-edit`);
-  const newSpan = document.createElement("div");
-  newSpan.id = `description-${buildId}`;
-  newSpan.className = "description-text";
-  newSpan.textContent = newDesc;
+  if (result.success) {
+    const textarea = document.querySelector(`textarea.description-edit`);
+    const newSpan = document.createElement("div");
 
-  if (textarea) textarea.replaceWith(newSpan);
+    newSpan.id = `description-${buildId}`;
+    newSpan.className = "description-text";
+    newSpan.textContent = newDesc;
+
+    if (textarea) textarea.replaceWith(newSpan); // Update new description text
+  }  
 
   if (!result.success) {
     alert("Description failed: " + result.message);
