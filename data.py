@@ -45,7 +45,7 @@ class Build(db.Model):
     __tablename__ = 'builds'
     id = db.Column(db.Integer, primary_key=True)
     build_name = db.Column(db.String(255), nullable=False)
-    build_description = db.Column(db.String(255), nullable=True)
+    build_description = db.Column(db.String(550), nullable=True)
     generation_data = db.Column(db.Text, nullable=False)
     linked_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 

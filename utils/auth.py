@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from flask import jsonify
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
@@ -9,7 +10,7 @@ import flask_wtf
 
 
 # Regex pattern to validate plaintext inputs
-TEXT_PATTERN = re.compile(r'^[a-zA-Z0-9_]+$')
+TEXT_PATTERN = re.compile(r'^[a-zA-Z0-9_ .,!?-]+$')
 
 # Regex pattern to validate email
 EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9_]+@+.')
@@ -66,10 +67,14 @@ def plain_text_processing(text: str) -> str:
 
     # Input validation
     if not text:
-        return "failure", jsonify({'success': False, 'message': 'Text is required.'}), 400
-    if len(text) > 255:
-        return "failure", jsonify({'success': False, 'message': 'Text cannot have over 255 characters'}), 400
-    if not TEXT_PATTERN.match(text):
-        return "failure", jsonify({'success': False, 'message': 'Invalid text format.'}), 400
+        return "failure", jsonify({'success': False, 'message': 'Text is required.'})
+    if len(text) > 550:
+        return "failure", jsonify({'success': False, 'message': 'Text cannot have over 2550 characters'})
+    stripped = text.strip()
 
-    return text
+    # Check for control characters (e.g., \x00, \x1B) rather than regex to preserve whitespace
+    for char in stripped:
+        if unicodedata.category(char)[0] == "C":
+            return "failure", jsonify({'success': False, 'message': 'Text contains invalid characters'})
+
+    return "success", text

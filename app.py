@@ -371,9 +371,13 @@ def saves():
 def rename_build(build_id:int):
     user_id = session.get("user_id")
     data = request.get_json()
-    new_name = data.get("name", "").strip()
+    new_name = data.get("name", "")
 
-    new_name = plain_text_processing(new_name) # Apply validation and sanitisation processing to the new name before entering into DB
+    status, new_name = plain_text_processing(new_name) # Apply validation and sanitisation processing to the new name before entering into DB
+
+    if status == "failure":
+        print("rename failed")
+        return new_name, 400
 
     if not user_id or not new_name:
         return jsonify({"success": False, "message": "Invalid request"}), 400
@@ -381,6 +385,9 @@ def rename_build(build_id:int):
     build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first()
     if not build:
         return jsonify({"success": False, "message": "Build not found"}), 404
+
+    
+    new_name = new_name.replace("\\", "") # Get rid of the backslashes from escaping the input
 
     build.build_name = new_name
     db.session.commit()
@@ -390,9 +397,13 @@ def rename_build(build_id:int):
 def update_description(build_id):
     user_id = session.get("user_id")
     data = request.get_json()
-    new_desc = data.get("description", "").strip()
+    new_desc = data.get("description", "")
 
-    new_desc = plain_text_processing(new_desc) # Apply validation and sanitisation process before entering into database
+    status, new_desc = plain_text_processing(new_desc) # Apply validation and sanitisation process before entering into database
+
+    if status == "failure":
+        print("rename failed")
+        return new_desc, 400
 
     if not user_id or not new_desc:
         return jsonify({"success": False, "message": "Invalid request"}), 400
@@ -400,6 +411,8 @@ def update_description(build_id):
     build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first()
     if not build:
         return jsonify({"success": False, "message": "Build not found"}), 404
+
+    new_desc = new_desc.replace("\\", "") # Get rid of the backslashes from escaping the input
 
     build.build_description = new_desc
     db.session.commit()
