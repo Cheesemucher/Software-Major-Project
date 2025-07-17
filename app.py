@@ -67,7 +67,7 @@ def csrf_protect():
 # Routes
 @app.route("/") # Immediately redirect to login from root
 def home():
-    return redirect(url_for("register"))
+    return redirect(url_for("login"))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

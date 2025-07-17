@@ -24,9 +24,9 @@
             <!-- Title -->
             <span id="build-name-{{ build.id }}" class="editable-name">{{ build.build_name }}</span>
             <!-- Control buttons -->
-            <button class="icon-button" onclick="startRename({{ build.id }})">✎</button>
-            <button class="icon-button" onclick="editDescription({{ build.id }})">T</button>
-            <button class="icon-button" onclick="deleteBuild({{ build.id }})">🗑️</button>
+            <button class="icon-button" onclick="startRename('{{ build.id }}')">✎</button> <!--Use jinja to pass the build id values as a parameter but use a string to prevent the compiler raising an error-->
+            <button class="icon-button" onclick="editDescription('{{ build.id }}')">T</button>
+            <button class="icon-button" onclick="deleteBuild('{{ build.id }}')">🗑️</button>
           </div>
         </div>
 
