@@ -385,7 +385,6 @@ def rename_build(build_id:int):
     build = Build.query.filter_by(id=build_id, linked_user_id=user_id).first()
     if not build:
         return jsonify({"success": False, "message": "Build not found"}), 404
-
     
     new_name = new_name.replace("\\", "") # Get rid of the backslashes from escaping the input
 
@@ -398,6 +397,8 @@ def update_description(build_id):
     user_id = session.get("user_id")
     data = request.get_json()
     new_desc = data.get("description", "")
+
+    print(new_desc)
 
     status, new_desc = plain_text_processing(new_desc) # Apply validation and sanitisation process before entering into database
 

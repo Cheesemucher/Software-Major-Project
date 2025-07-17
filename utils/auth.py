@@ -74,7 +74,7 @@ def plain_text_processing(text: str) -> str:
 
     # Check for control characters (e.g., \x00, \x1B) rather than regex to preserve whitespace
     for char in stripped:
-        if unicodedata.category(char)[0] == "C":
+        if unicodedata.category(char)[0] == "C" and char not in ('\n', '\r'):
             return "failure", jsonify({'success': False, 'message': 'Text contains invalid characters'})
 
     return "success", text
