@@ -101,7 +101,7 @@ function updateUIStats() {
   updateUserBalance() // Update the user balance in the database so they can cry as their life savings get gambled away
 }
 
-function endGame(){
+function end_game(){
   gameState.multiplier = 1
   gameState.bet = 0
   gameState.gameActive = false
@@ -129,11 +129,11 @@ function updateTotal(cardNum) {
   if (gameState.playerMinTotal > 21) {
     console.log("Bust")
     //alert("You busted! Dealer wins."); // Add an animation here for a bust
-    flipDealerCard(dealerFaceDownCard)
+    flipCard(dealerFaceDownCard)
     showGameMessage("Bust!", "#FF4E4E"); // Show bust animation
 
     playerBalance -= gameState.multiplier * gameState.bet; // Deduct the bet from player balance
-    endGame();
+    end_game();
     return;
   }
   
@@ -167,7 +167,7 @@ async function stand() {
   }
 
   // First flip the dealer card
-  flipDealerCard(dealerFaceDownCard);
+  flipCard(dealerFaceDownCard);
 
   // Deal dealer and resolve game
   const response = await fetch('/blackjack/resolve-game', {
@@ -215,7 +215,7 @@ async function stand() {
       break;
   }
   // End round stuff
-  endGame()
+  end_game()
 }
 
 function doubleDown() {
@@ -301,8 +301,8 @@ function startNewRound() {
   dealerBJ = findBlackjack(dealerCard1, dealerCard2)
   // Resolve game immediately if someone has a blackjack
   if (playerBJ && dealerBJ) {
-    flipDealerCard(dealerFaceDownCard);
     showGameMessage("DOUBLE BLACKJACK! Upping the stakes...", "#FFD64E")
+    flipCard(dealerFaceDownCard);
     gameState.gameActive = false
     gameState.multiplier = 2
     gameState.bet = 0
@@ -311,20 +311,20 @@ function startNewRound() {
 
   else if (playerBJ){
     console.log("Player Blackjack!")
-    flipDealerCard(dealerFaceDownCard);
     showGameMessage("Blackjack! You Win!", "#4EFF89")
+    flipCard(dealerFaceDownCard);
 
     playerBalance += gameState.multiplier * Math.ceil(1.5 * gameState.bet); // Rounded 3:2 payout for getting blackjack
-    endGame()
+    end_game()
   }
 
   else if (dealerBJ){
     console.log("Dealer Blackjack!")
-    flipDealerCard(dealerFaceDownCard)
     showGameMessage("Dealer Blackjack!", "#FF4E4E")
+    flipCard(dealerFaceDownCard);
 
     playerBalance -= gameState.multiplier * gameState.bet; // Still lose normal amount apparently
-    endGame()
+    end_game()
   }
 }
 
@@ -398,6 +398,6 @@ function renderCardFaceDown(realSrc, containerId) {
 }
 
 
-function flipDealerCard(cardElement) {
+function flipCard(cardElement) {
   cardElement.classList.add('flip');
 }
