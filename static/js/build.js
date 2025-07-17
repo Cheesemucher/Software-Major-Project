@@ -195,6 +195,9 @@ function requestTilePlacement(type, size, originNrotation) {
       drawPlusButtonAt(button.x, button.y, button.rotation);
     });
 
+    // Apply button size changes
+    resizeButtons()
+
     // Hide menu again after first shape placement
     const menu = document.getElementById("centerMenu");
     if (menu) {
@@ -207,25 +210,6 @@ function deleteTile(type, size, originNrotation) {
   
   
   const { x, y, rotation } = originNrotation;
-  /*
-  if (type === "square") {
-    localPlusPoints = getSquareEdgePositions({ x, y }, rotation, size);
-  } else if (type === "triangle") {
-    localPlusPoints = getTriangleEdgePositions({ x, y }, rotation, size);
-  } else {
-    console.log("Unsupported shape type:", type);
-    return;
-  }
-
-  // Handle tile deletion
-
-  
-  localPlusPoints.forEach(p => {
-    let newRotation = (p.rotation + 180) % 360; // Flip the rotation by 180 degrees as the deletion generates the buttons backwards
-    p.rotation = newRotation; // Update the rotation in the p object (the button object)
-    addButton(p, p.x, p.y, newRotation)
-  });
-  */
 
   // Remove the desired shape both from array and visually
   placedShapes = placedShapes.filter(shape =>
@@ -288,6 +272,7 @@ function regeneratePlusButtons() {
       }
     });
   });
+  resizeButtons()
 }
 
 // Helper to simulate overlap like your Python version
@@ -402,7 +387,6 @@ function removePlusButton(buttonInfo) {
   const { found, index } = compareButtonInfo(buttonInfo);
 
   if (found) {
-    console.log("button found in list position", index)
     activePlusButtons.splice(index, 1);
   }
 }
@@ -508,7 +492,7 @@ async function openRecs() {
   }
 }
 
-function openSettings() {
+async function openSettings() {
   // TODO: Make settings page with colourblind option or something and button size changing stuff
   console.log("Settings clicked");
   
@@ -516,7 +500,7 @@ function openSettings() {
 
 }
 
-function toggleButtons(show) { // Called when the event listener detects the checkbox for toggling buttons is clicked
+async function toggleButtons(show) { // Called when the event listener detects the checkbox for toggling buttons is clicked
   const deleteButtons = document.querySelectorAll(".delete-button");
   const plusButtons = document.querySelectorAll(".plus-button");
 
@@ -529,7 +513,7 @@ function toggleButtons(show) { // Called when the event listener detects the che
   });
 }
 
-function applySettingChanges() { 
+async function applySettingChanges() { 
 
   // Colour changes
   const squareColour = document.getElementById("squareColor").value; // Alter the CSS for the shapes to modify colours
@@ -542,27 +526,11 @@ function applySettingChanges() {
   // Button size changes
   const plusSize = document.getElementById("plusSize").value + "px";
   const deleteSize = document.getElementById("deleteSize").value + "px";
+  resizeButtons(plusSize, deleteSize)
 
-    // Resize plus buttons
-  const plusButtons = document.querySelectorAll(".plus-button");
-  console.log("plus buttons being resized to", plusSize)
-  plusButtons.forEach(btn => {
-    btn.style.width = plusSize;
-    btn.style.height = plusSize;
-    btn.style.fontSize = (parseInt(plusSize) / 2) + "px"; // Adjust font size
-  });
-
-    // Resize delete buttons
-  const deleteButtons = document.querySelectorAll(".delete-button");
-  console.log("d buttons being resized to", deleteSize)
-  deleteButtons.forEach(btn => {
-    btn.style.width = deleteSize;
-    btn.style.height = deleteSize;
-    btn.style.fontSize = (parseInt(deleteSize) / 2) + "px"; // Adjust font size
-  });
 
   // Update db with new user settings preferences
-  fetch("/store-settings", {
+  await fetch("/store-settings", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -586,6 +554,26 @@ function applySettingChanges() {
   })
   .catch(err => {
     console.error("Request error:", err);
+  });
+}
+
+function resizeButtons(plusSize=document.getElementById("plusSize").value + "px", deleteSize=document.getElementById("deleteSize").value + "px") {
+  // Resize plus buttons
+  const plusButtons = document.querySelectorAll(".plus-button");
+  console.log("plus buttons being resized to", plusSize)
+  plusButtons.forEach(btn => {
+    btn.style.width = plusSize;
+    btn.style.height = plusSize;
+    btn.style.fontSize = (parseInt(plusSize) / 2) + "px"; // Adjust font size
+  });
+
+  // Resize delete buttons
+  const deleteButtons = document.querySelectorAll(".delete-button");
+  console.log("d buttons being resized to", deleteSize)
+  deleteButtons.forEach(btn => {
+    btn.style.width = deleteSize;
+    btn.style.height = deleteSize;
+    btn.style.fontSize = (parseInt(deleteSize) / 2) + "px"; // Adjust font size
   });
 }
 
@@ -619,7 +607,7 @@ function updateBuildColours(squareColour, triangleColour, deleteButtonColour) { 
   }
 }
 
-function resetSettings() {
+async function resetSettings() {
   // Reset color pickers
   document.getElementById("squareColor").value = defaultSettings.squareColor;
   document.getElementById("triangleColor").value = defaultSettings.triangleColor;
@@ -630,7 +618,7 @@ function resetSettings() {
   document.getElementById("deleteSize").value = defaultSettings.deleteSize;
 
   // Apply those defaults visually too
-  applySettingChanges();
+  await applySettingChanges();
 }
 
 // Called when checkbox changes (When user clicks toggleButtons checkbox in menu)
