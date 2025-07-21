@@ -7,6 +7,7 @@ from wtforms.validators import DataRequired, Email, Length
 import json
 import werkzeug.security
 import flask_wtf
+from data import db, User, lookup_user_by_email 
 
 
 # Regex pattern to validate plaintext inputs
@@ -74,3 +75,51 @@ def plain_text_processing(text: str) -> str:
     text = re.escape(text)
 
     return "success", text
+
+
+def register_user(email:str, password:str) -> tuple:
+    # Input validation and sanitisation
+    status, result, code = register_processing(email, password)
+    if status == "failure":
+        return status, code
+    else:
+        email, password = result
+        print("Result:", code) # Prints "Yippee"
+
+    
+    # Check if user already exists
+    existing_user = lookup_user_by_email(email)
+    if existing_user:
+        return "failure", {'message': 'User with this email already exists.'}, 400
+
+    # Create new user
+    new_user = User(email=email, password_hash=None, visual_settings=json.dumps({"squareColour": "#e26a4a", "triangleColour": "#e26a4a", "deleteButtonColour": "#ff8400", "plusSize": "30", "deleteSize": "22"}), blackjack_balance=1000)
+    new_user.set_password(password)
+
+    try:
+        db.session.add(new_user)
+        db.session.commit()
+
+        return "success", {'message': 'User registered successfully.'}, 201
+    except Exception as e:
+        db.session.rollback()
+        return "failure", {'message': 'Server error. Please try again.'}, 500
+
+def login_user(email: str, password: str) -> tuple:
+     # Input validation and sanitisation
+    status, result, code = login_processing(email, password)
+    if status == "failure":
+        return status, code
+    else:
+        email, password = result
+        print("Result:", code) # Prints "Yippee"
+
+    user = lookup_user_by_email(email)
+
+    if not user:
+        return "failure", {'message': 'User not found.'}, 401
+
+    if not user.check_password(password):
+        return "failure", {'message': 'Invalid credentials.'}, 401
+
+    return "success", user, 200

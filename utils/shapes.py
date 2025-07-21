@@ -95,3 +95,44 @@ def check_overlap(shape1, shape2):
         min_distance = 58
     
     return distance < min_distance
+
+
+def check_shape_overlap(new_shape, existing_shapes): # Check overlap for full shape array
+    """Check if a new shape would overlap with any existing shapes"""
+    for shape in existing_shapes:
+        if check_overlap(new_shape, shape):
+            return False # Should be set to true to prevent overlap, disabled for testing purposes
+    return False 
+
+
+def handle_place_shape_request(data: dict, existing_shapes: list):
+    shape_type = data.get("type")
+    x = data.get("x")
+    y = data.get("y")
+    rotation = data.get("rotation")
+
+    if shape_type == "square":
+        centre = get_square_centre(x, y, rotation)
+        new_plus_signs = get_square_edge_positions(centre, rotation)
+    elif shape_type == "triangle":
+        centre = get_triangle_centre(x, y, rotation)
+        new_plus_signs = get_triangle_edge_positions(centre, rotation)
+    else:
+        return {"error": "Invalid shape type", "placed": [], "plus_points": []}
+
+    new_shape = {"x": centre["x"], "y": centre["y"], "type": shape_type, "rotation": rotation}
+
+    if check_shape_overlap(new_shape, existing_shapes):
+        return {"error": "Shape would overlap", "placed": [], "plus_points": []}
+
+    filtered_plus_signs = []
+    for plus in new_plus_signs:
+        square = get_square_centre(plus["x"], plus["y"], plus["rotation"])
+        square["type"] = "square"
+        triangle = get_triangle_centre(plus["x"], plus["y"], plus["rotation"])
+        triangle["type"] = "triangle"
+
+        if not check_shape_overlap(square, existing_shapes) or not check_shape_overlap(triangle, existing_shapes):
+            filtered_plus_signs.append(plus)
+
+    return {"placed": [new_shape], "plus_points": filtered_plus_signs}

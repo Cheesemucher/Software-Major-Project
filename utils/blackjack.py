@@ -1,4 +1,6 @@
 import random
+from data import db, User, lookup_user_by_email, Build
+
 def dealCard() -> tuple:
     card = random.randint(1, 13)
     cardValue = card
@@ -83,6 +85,22 @@ def deal_dealer(dcard1:str, dcard2:str, playerTotal)-> tuple: # Return each card
         print("dTotal:", dTotal)
         print("PlayerTotal:", playerTotal)
         
+    
+def get_user_balance(user_id: int):
+    user = User.query.filter_by(id=user_id).first()
+    if not user:
+        raise ValueError("User not found")
+    return user.blackjack_balance
 
-            
-            
+def update_user_balance(user_id: int, new_balance: float):
+    user = User.query.filter_by(id=user_id).first()
+    if not user:
+        raise ValueError("User not found")
+    user.blackjack_balance = new_balance
+    db.session.commit()
+
+def resolve_blackjack_game(player_cards: list, dealer_cards: list):
+    playerTotal = getTotal(player_cards)
+    full_dealer_hand, result = deal_dealer(dealer_cards[0], dealer_cards[1], playerTotal)
+    dealer_shown = full_dealer_hand[2:]
+    return {"dealer_cards": dealer_shown, "result": result}

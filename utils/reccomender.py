@@ -91,3 +91,16 @@ def find_top_matches(user_generation_data):
     relevant_builds = [row for score, row in matches if score >= 0.6]
 
     return top_matches, relevant_builds
+
+
+
+# Helper function for route
+def generate_build_recommendations(build_data: str):
+    top_matches, relevant_builds = find_top_matches(build_data)
+
+    for rec in top_matches:
+        rec["youtube_link"] = convert_to_embed_url(rec.get("youtube_link", ""))
+    for rel in relevant_builds:
+        rel["youtube_link"] = convert_to_embed_url(rel.get("youtube_link", ""))
+
+    return top_matches, relevant_builds
