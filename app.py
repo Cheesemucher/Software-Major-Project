@@ -14,6 +14,7 @@ from utils.shapes import (
 )
 from blackjack import getTotal, deal_dealer # Import blackjack functions to use in the blackjack game
 from utils.reccomender import find_top_matches, convert_to_embed_url # The reccomender function
+from datetime import timedelta
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = secrets.token_hex(16)  # Create session token cookie for session management by default (thank you Flask)
@@ -21,6 +22,7 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent XXS and JS from accessin
 app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'  # Helps prevent CSRF attacks from other sites
 app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///users.db'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)  # Set session lifetime to 30 mins of inactivity
 
 # Initialize databases
 db.init_app(app)
@@ -84,17 +86,6 @@ def register():
             return jsonify({'success': False, 'message': 'Invalid JSON payload.'}), 400
         email = data.get('email', '').strip()
         password = data.get('password', '')
-
-
-        if email == 'f@f':
-            # Create an admin account that can have a shorter password so i can log in easier each time TODO REMOVE THIS IN PRODUCTION
-            user = User(email="f@f")
-            user.set_password("f")
-            db.session.add(user)
-            db.session.commit()
-            print("admin account made")
-            return jsonify({'success': True, 'next_url': 'login'}), 201
-
 
         # Input validation and sanitisation
         status, result, code = register_processing(email, password)
@@ -162,6 +153,7 @@ def login():
 
         # Establish session on success
         session.clear()
+        session.permanent = True # Activate Flask session timeout timer/inactivity checker whatever it is
         session['user_id'] = user.id # Store the current user ID in the session for later use to check who this is when loading builds
         session['csrf_token'] = str(user.id) + str(secrets.token_hex(32))
 

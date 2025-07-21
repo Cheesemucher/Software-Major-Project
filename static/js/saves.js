@@ -65,7 +65,6 @@ function editDescription(buildId) {
 }
 
 async function submitDescription(buildId, newDesc) {
-  console.log(newDesc);
   if (!newDesc.trim()) return;
 
   const res = await fetch(`/update-description/${buildId}`, {
