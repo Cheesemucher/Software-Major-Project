@@ -11,6 +11,8 @@ from utils.builds import *
 from utils.blackjack import * # Import blackjack functions to use in the blackjack game
 from utils.reccomender import *
 from datetime import timedelta
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = secrets.token_hex(16)  # Create session token cookie for session management by default (thank you Flask)
@@ -19,6 +21,15 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'  # Helps prevent CSRF attacks f
 app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///users.db'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)  # Set session lifetime to 30 mins of inactivity
+
+
+# Initialize rate limiter
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per hour"],  # Set default rate limits
+)
+
 
 # Initialize databases
 db.init_app(app)
@@ -55,6 +66,22 @@ def csrf_protect():
             return jsonify({'success': False, 'message': 'CSRF token missing or invalid'}), 403
 
 
+# Add security headers to all responses
+@app.after_request
+def add_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Content-Security-Policy"] = "default-src 'self';"
+    return response
+
+
+
+# Override default error handler for 429 (rate limit exceeded)
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return {"error": "Rate limit exceeded. Try again later."}, 429
+
+
 # Routes
 @app.route("/") # Immediately redirect to login from root
 def home():
@@ -82,7 +109,7 @@ def register():
         status, message, code = register_user(normalized_email, password)
 
         if status == "failure":
-            return jsonify({'success': False, **message}), code
+            return jsonify({'success': False, 'message': message}), code
 
         # Success
         next_url = url_for('login')
@@ -97,6 +124,7 @@ def register():
         return jsonify({'success': False, 'message': 'Server error. Please try again.'}), 500
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute") # Limit login attempts to 5 per minute to prevent brute force attacks
 def login():
     if request.method == 'GET':
         session.clear()
@@ -110,7 +138,7 @@ def login():
         status, result, code = login_user(email, password)
 
         if status == "failure":
-            return jsonify({'success': False, **result}), code
+            return jsonify({'success': False, 'message': result}), code
 
         # Establish session on success
         user = result
@@ -346,4 +374,4 @@ def recs():
 
 
 if __name__ == "__main__":
-    app.run(debug=True,port=5000)
+    app.run(debug=False,port=5000)
