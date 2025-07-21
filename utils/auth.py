@@ -10,7 +10,7 @@ import flask_wtf
 
 
 # Regex pattern to validate plaintext inputs
-TEXT_PATTERN = re.compile(r'^[a-zA-Z0-9_ .,!?-]+$')
+TEXT_PATTERN = re.compile(r'^[\w\s.,!?()\[\]{}\n\r\'\"-]*$') # Allows alphanumeric characters, spaces, punctuation, and some special characters
 
 # Regex pattern to validate email
 EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9_]+@+.')
@@ -63,18 +63,14 @@ def register_processing(email: str, password: str) -> tuple:
     return "success", [email, password], "Yippee"
 
 def plain_text_processing(text: str) -> str:
-    text = re.escape(text)
-
     # Input validation
     if not text:
         return "failure", jsonify({'success': False, 'message': 'Text is required.'})
     if len(text) > 550:
-        return "failure", jsonify({'success': False, 'message': 'Text cannot have over 2550 characters'})
-    stripped = text.strip()
+        return "failure", jsonify({'success': False, 'message': 'Text cannot have over 550 characters'})
+    if not TEXT_PATTERN.fullmatch(text):
+        return "failure", jsonify({'success': False, 'message': 'Text contains invalid characters.'})
 
-    # Check for control characters (e.g., \x00, \x1B) rather than regex to preserve whitespace
-    for char in stripped:
-        if unicodedata.category(char)[0] == "C" and char not in ('\n', '\r'):
-            return "failure", jsonify({'success': False, 'message': 'Text contains invalid characters'})
+    text = re.escape(text)
 
     return "success", text
