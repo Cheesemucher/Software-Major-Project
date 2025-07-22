@@ -631,7 +631,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   console.log("centering view");
   centerView()
 
-  console.log("begginning render build")
   try {
     const res = await fetch('/selected-build', { // Retrieve the selected build data from the server upon page load
       method: 'POST',

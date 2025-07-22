@@ -22,7 +22,7 @@
             <h3 class="match-title">{{ match.title }}</h3>
           </div>
           <iframe class="match-video" src="{{ match.youtube_link }}" frameborder="0" allowfullscreen></iframe>
-          <button class="copy-button" onclick='makeCopy({{ match | tojson | safe }})'>Create a Copy</button>
+          <button class="copy-button" onclick='makeCopy("{{ match | tojson | safe }}")'>Create a Copy</button>
         </div>
       {% endfor %}
     {% else %}
@@ -39,7 +39,7 @@
           <h3 class="match-title">{{ match.title }}</h3>
         </div>
         <iframe class="match-video" src="{{ match.youtube_link }}" frameborder="0" allowfullscreen></iframe>
-        <button class="copy-button" onclick='makeCopy({{ match | tojson | safe }})'>Create a Copy</button>
+        <button class="copy-button" onclick='makeCopy("{{ match | tojson | safe }}")'>Create a Copy</button>
       </div>
     {% endfor %}
   </div>

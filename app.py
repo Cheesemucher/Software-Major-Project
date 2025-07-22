@@ -66,15 +66,6 @@ def csrf_protect():
             return jsonify({'success': False, 'message': 'CSRF token missing or invalid'}), 403
 
 
-# Add security headers to all responses
-@app.after_request
-def add_security_headers(response):
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Content-Security-Policy"] = "default-src 'self';"
-    return response
-
-
 
 # Override default error handler for 429 (rate limit exceeded)
 @app.errorhandler(429)
@@ -124,7 +115,7 @@ def register():
         return jsonify({'success': False, 'message': 'Server error. Please try again.'}), 500
 
 @app.route('/login', methods=['GET', 'POST'])
-@limiter.limit("5 per minute") # Limit login attempts to 5 per minute to prevent brute force attacks
+@limiter.limit("40 per minute") # Limit login attempts to 5 per minute to prevent brute force attacks
 def login():
     if request.method == 'GET':
         session.clear()

@@ -42,7 +42,7 @@ function findBlackjack(card1, card2) { // Just checks if starting hands add to 2
 
 function findCardSrc(card){ // Card will just be a single character representing the card value/type
   // Generate a random suite (imagine theres like 10 decks, don't bother with card counting)
-  const suits = ['S', 'H', 'D', 'C'];
+  const suits = ['S', 'H', 'D', 'C']; 
   const suit = suits[Math.floor(Math.random() * suits.length)];
 
   const cardCode = card + suit; // Combine card value with suit to create a unique identifier based on how each card is named in the elements folder
@@ -51,7 +51,7 @@ function findCardSrc(card){ // Card will just be a single character representing
 
 function renderCard(src, side) { // src is desired image src, side can be 'player' or 'dealer'
   // Get the target hand container
-  const hand = document.getElementById(`${side}-hand`);
+  const hand = document.getElementById(`${side}-hand`); // Dealer or player hand div element to append the card to
 
   // Create image element
   const cardImg = document.createElement("img");

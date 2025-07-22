@@ -12,7 +12,10 @@ def match_tile(tile1, tile2, tolerance=5.0, rotation_tol=40.0):
         and abs(tile1["rotation"] - tile2["rotation"]) <= rotation_tol
     )
 
-def tile_match_score(user_shapes:list, meta_shapes:list) -> tuple:
+def tile_match_score(user_shapes: list, meta_shapes: list) -> tuple:
+    if not isinstance(user_shapes, list) or not user_shapes:
+        return 1, 1.0  # No user shapes to match against so return 1 to match all
+
     matched = 0
     used = [False] * len(meta_shapes)
 

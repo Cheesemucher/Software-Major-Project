@@ -162,6 +162,7 @@ function createNewBuild() {
 // Open a build by ID (currently just redirects with build page with the ID as a query parameter to say which build to load)
 function openBuild(buildId) {
     const nextUrl = `/build?id=${buildId}`
+    console.log("Opening build with ID: " + buildId);
     // Redirect to the build page with desired build loaded
     if (nextUrl && nextUrl.startsWith("/") && !nextUrl.startsWith("//")) {
       window.location.href = nextUrl;

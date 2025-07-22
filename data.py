@@ -17,7 +17,7 @@ class User(db.Model):
     blackjack_balance = db.Column(db.Integer, nullable=True)
 
     # Relationship to Build
-    builds = db.relationship('Build', backref='user', lazy=True, cascade='all, delete-orphan') # RIP orphan ;-;
+    builds = db.relationship('Build', backref='user', lazy=True, cascade='all, delete-orphan') 
 
 
     def set_password(self, plain_password: str):
